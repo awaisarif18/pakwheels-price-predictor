@@ -22,9 +22,11 @@ from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.pakwheels.com"
 SEARCH_URL = BASE_URL + "/used-cars/search/-/?page={page}"
-RAW_FILE = Path("pakwheels_raw.csv")
-CLEAN_FILE = Path("pakwheels_clean.csv")
-DEBUG_DIR = Path("debug_pages")
+PROJECT_DIR = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_DIR / "data" / "raw" / "current"
+RAW_FILE = DATA_DIR / "pakwheels_raw.csv"
+CLEAN_FILE = DATA_DIR / "pakwheels_clean.csv"
+DEBUG_DIR = PROJECT_DIR / "data" / "debug_pages"
 
 COLUMNS = [
     "listing_id", "car_title", "year", "price_pkr", "mileage_km",
@@ -172,7 +174,7 @@ def parse_car(html, url):
 
 
 def save_debug(html, url, row, text_preview):
-    DEBUG_DIR.mkdir(exist_ok=True)
+    DEBUG_DIR.mkdir(parents=True, exist_ok=True)
     ad_id = row["listing_id"] or "unknown"
     (DEBUG_DIR / f"failed_{ad_id}.html").write_text(html, encoding="utf-8")
     (DEBUG_DIR / f"failed_{ad_id}.txt").write_text(
@@ -193,6 +195,7 @@ def load_existing():
 
 
 def save_csv(records):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(records.values(), columns=COLUMNS)
     df.to_csv(RAW_FILE, index=False)
     clean = df[df["parse_status"] == "complete"].copy()
@@ -260,9 +263,9 @@ def main():
                 found = listing_links(html)
                 print(f"[SEARCH] Found {len(found)} listing links")
                 if not found:
-                    DEBUG_DIR.mkdir(exist_ok=True)
+                    DEBUG_DIR.mkdir(parents=True, exist_ok=True)
                     (DEBUG_DIR / f"search_page_{page}.html").write_text(html, encoding="utf-8")
-                    print(f"[DEBUG] Saved debug_pages/search_page_{page}.html")
+                    print(f"[DEBUG] Saved {DEBUG_DIR / f'search_page_{page}.html'}")
                     break
                 for link in found:
                     discovered[link] = None

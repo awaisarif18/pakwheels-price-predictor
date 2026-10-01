@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "status": "draft",
+  "vehicle_type": "car",
+  "supported_models": [],
+  "year_range": null,
+  "cities": [],
+  "note": "No prediction support is declared. Set scope after the initial source and identity audit."
+}

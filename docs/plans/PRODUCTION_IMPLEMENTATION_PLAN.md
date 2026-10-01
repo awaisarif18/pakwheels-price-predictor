@@ -1,6 +1,6 @@
 # Pakistan vehicle price predictor: implementation and production plan
 
-Prepared on 1 October 2026. This is a proposed implementation plan, not a report of completed development. It builds on [the project handbook](PakWheels_Vehicle_Price_Predictor_Handbook.md), the existing scraper, and the current CSV sample.
+Prepared on 1 October 2026. This is a proposed implementation plan, not a report of completed development. It builds on [the project handbook](../reference/PakWheels_Vehicle_Price_Predictor_Handbook.md), the existing scraper, and the current CSV sample.
 
 **Execution order updated:** Start with [the data and modeling pilot](DATA_MODELING_PILOT_PLAN.md). Reuse the working scraper, verify data and features, compare algorithms, build a local demo, and evaluate larger training datasets before beginning this document's production work. The framework and infrastructure choices below are future recommendations to reassess after the pilot, not immediate implementation commitments. The pilot's milestones take precedence over this document's early phase and PR sequence.
 
@@ -33,7 +33,7 @@ The most expensive mistake would be making training and inference interpret a ve
 | Quality tooling | pytest, Ruff, mypy, uv lockfile | Reproducible environments and checks concentrated on actual failure modes |
 | Promotion | Explicit dataset, model, and application release gates | Prevents an unreviewed model or catalogue change from becoming live |
 
-These choices are project judgments. Official documentation supports the framework behavior; it does not establish that any framework guarantees better predictions or production reliability. See [the framework research](docs/framework-research.md).
+These choices are project judgments. Official documentation supports the framework behavior; it does not establish that any framework guarantees better predictions or production reliability. See [the framework research](../framework-research.md).
 
 ## 2. Starting point and constraints
 
@@ -902,6 +902,6 @@ Use the handbook as historical context. Use this plan for the proposed implement
 
 Each decision record states the problem, chosen approach, alternatives, consequences, and evidence that would justify revisiting it. Routine code choices do not need their own architecture document.
 
-Official-source framework and hosting details are collected in [the research note](docs/framework-research.md). Additional technical sources are linked where used in this plan. Data quotas, gates, module structure, SLO targets, and concurrency defaults are project proposals, not claims established by those sources.
+Official-source framework and hosting details are collected in [the research note](../framework-research.md). Additional technical sources are linked where used in this plan. Data quotas, gates, module structure, SLO targets, and concurrency defaults are project proposals, not claims established by those sources.
 
 No collection, training, application implementation, or deployment was performed while preparing this plan.

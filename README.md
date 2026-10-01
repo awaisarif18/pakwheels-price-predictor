@@ -1,43 +1,108 @@
-# PakWheels car-price research collector
+# Pakistan vehicle price predictor
 
-The [project journal](PROJECT_JOURNAL.md) records development history, hurdles, decisions, verified statistics, and experiment results. Update it after meaningful project work. The [data and modeling pilot plan](DATA_MODELING_PILOT_PLAN.md) defines the current implementation sequence.
+The current stage is the data and modeling pilot. Reuse the working car collector, audit its evidence, then develop normalization, features, and model comparisons before a local demo.
 
-Use only within the scope of access authorized by PakWheels. The program is intentionally sequential and stops at HTTP 401/403/429 rather than circumventing restrictions. Please keep output private until the requested review.
+- [Active pilot plan](docs/plans/DATA_MODELING_PILOT_PLAN.md)
+- [Project journal](PROJECT_JOURNAL.md), updated after meaningful project work
+- [Project handbook](docs/reference/PakWheels_Vehicle_Price_Predictor_Handbook.md)
+- [Future production plan](docs/plans/PRODUCTION_IMPLEMENTATION_PLAN.md)
+- [Framework research](docs/framework-research.md)
+- [Coding practices reference](docs/reference/production_practices.md)
 
-## Windows PowerShell setup
+## Current structure
+
+```text
+pakwheels-price-predictor/
+  scraper.py                    Working collector; output paths now organized
+  requirements.txt              Existing collector dependencies
+  PROJECT_JOURNAL.md            Development story and evidence
+  pilot/
+    audit.py                    Reusable offline CSV audit
+    paths.py                    Audit defaults anchored to the project
+  scripts/
+    audit_data.py               Audit command entry point
+  tests/
+    test_audit.py               Data-integrity and review-preservation checks
+  configs/
+    pilot_scope.json            Draft; declares no supported models yet
+  catalogues/                   Reviewed identity catalogues will go here
+  docs/
+    plans/                      Pilot and future production plans
+    reference/                  Handbook and coding practices
+    framework-research.md
+  data/
+    raw/
+      baseline_2026-10-01/       Preserved original sample and collector
+      current/                  Active collector CSVs
+    processed/                  Future normalized training datasets
+    debug_pages/                Private HTML/text diagnostics
+    manifests/                  Future collection/dataset manifests
+  reports/pilot/                Generated audit and manual review worksheet
+  models/pilot/                 Future saved predictor artifacts
+```
+
+Private data, generated reports, diagnostics, model artifacts, and the local environment are excluded from Git. Project plans, journal, source, and directory documentation remain trackable. The baseline is a local preservation copy; maintain an independent private backup too.
+
+## Use the existing Windows environment
+
+Run commands from the project root. The existing `.venv` currently uses Python 3.13.7. Do not recreate it for this setup.
 
 ```powershell
-cd "D:\Coding Projects\pakwheels-price-predictor"
+Set-Location "D:\Coding Projects\pakwheels-price-predictor"
+.\.venv\Scripts\python.exe --version
+```
+
+For a fresh checkout only, create an environment and install the current collector requirements:
+
+```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## Confirm the parser works without internet access
+The preserved baseline also records installed versions. No new dependency is needed for the offline audit or its tests.
+
+## First step: offline audit
 
 ```powershell
-python scraper.py --self-test
+.\.venv\Scripts\python.exe -m scripts.audit_data
 ```
 
-## Test just one advertisement
+The default inputs are the preserved baseline CSVs. Outputs:
+
+- [Stored-data audit](reports/pilot/initial_audit.md), regenerated when the command runs.
+- [Identity review worksheet](reports/pilot/identity_review.csv), seeded with pending reviews and preserved on subsequent runs.
+
+The audit checks schema, duplicate IDs/URLs, missing fields, numerical integrity, category counts, and consistency between the two exports. It does not fetch source pages or establish source correctness, training eligibility, or model reliability.
+
+Review all ten original rows against available source evidence and record make/model/variant decisions in the worksheet. Record unavailable evidence explicitly. For a new batch, use a separate report directory:
 
 ```powershell
-python scraper.py --url "https://www.pakwheels.com/used-cars/honda-city-2022-for-sale-in-islamabad-12001735" --contact "your-real-email@example.com"
+.\.venv\Scripts\python.exe -m scripts.audit_data --raw data/raw/current/pakwheels_raw.csv --clean data/raw/current/pakwheels_clean.csv --output-dir reports/pilot/current_batch
 ```
 
-## Small, approved sample of search results
+## Verify offline behavior
 
 ```powershell
-python scraper.py --pages 1 --ads 10 --delay 5 --contact "your-real-email@example.com"
+.\.venv\Scripts\python.exe scraper.py --self-test
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-## Outputs
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector retains its parsing, delay, access-stop, and resume logic while using project-relative output directories.
 
-- `pakwheels_raw.csv`: every parsed listing, including incomplete rows and `missing_fields`.
-- `pakwheels_clean.csv`: rows that have a title, asking price, year and mileage.
-- `debug_pages/failed_<id>.html`: returned HTML for unsuccessful extraction.
-- `debug_pages/failed_<id>.txt`: which fields were missing and the first part of visible listing text.
+## Collect a small authorized sample
 
-The CSV represents *advertised asking prices*, not verified sale transactions. Check a sample manually before training. Debug HTML may include sellers' personal information: redact it before sharing publicly.
+Use collection only within the reported authorization. The next larger pilot follows the source audit. Current collector options:
 
-If extraction fails for all ads, look in `debug_pages` first. The site can deliver different markup to a script than to a browser. No live scraping has been executed to validate selectors from this environment.
+```powershell
+.\.venv\Scripts\python.exe scraper.py --pages 1 --ads 10 --delay 5 --contact "your-real-email@example.com"
+```
+
+For one advertisement, use `--url` with a current permitted PakWheels car listing URL. HTTP 401/403/429 stops the run. `--ads` still limits selected URLs, which may include previously saved complete listings; start-page and improved batch controls are future pilot work.
+
+Collector output paths:
+
+- `data/raw/current/pakwheels_raw.csv`: all parsed rows, including incomplete rows.
+- `data/raw/current/pakwheels_clean.csv`: rows containing title, asking price, year, and mileage.
+- `data/debug_pages/failed_<id>.html` and `.txt`: diagnostic evidence for incomplete listings.
+
+The clean export is parser complete, not a reviewed training dataset. Preserve each batch before another run. Asking prices are not verified sale prices, and diagnostic HTML may include seller information. Keep the prototype and evidence private until the requested review.
