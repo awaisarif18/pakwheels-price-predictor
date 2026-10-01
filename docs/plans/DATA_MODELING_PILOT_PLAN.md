@@ -4,6 +4,10 @@ Prepared on 1 October 2026. This is the active first-stage plan. Complete this p
 
 Workspace update: the implemented first-step layout and runnable audit command are documented in [the root README](../../README.md). The directory tree later in this plan remains a sketch for upcoming pilot work.
 
+Baseline confirmation: the user has confirmed the ten original records are accurate. Accept that confirmation and proceed to identity/schema decisions. The source-audit instructions below still apply to new fields and future batches; repeating the ten-record accuracy check is not required.
+
+Implementation update, 1 October 2026: schema version 2 is implemented and checked against a separate ten-page validation sample. [Source mapping and results](../collection-field-mapping.md) record the field definitions and limitations. All ten dates were `Last Updated`; nine registration years were explicitly stated, all with unknown meaning. Source identity extraction is implemented; canonical catalogue review remains pending. The scraper now supports `--output-dir`, `--refresh`, and `--start-page`. Prepare family sampling and general batch accounting before the varied 100-300-record collection pilot.
+
 ## 1. What we are trying to establish
 
 Use the working scraper to build a trustworthy small dataset, determine which inputs can be collected reliably, compare suitable regression algorithms, and demonstrate predictions locally. Increase the dataset after the full path works and measured errors tell us what to collect next.
@@ -57,7 +61,7 @@ The first changes should solve observed collection problems:
 
 Implement these incrementally. Do not replace the script with a broad ingestion framework before the dataset audit.
 
-Until an explicit refresh mode exists, the current scraper skips complete saved rows. Batch snapshots therefore need copying before another run, and refresh experiments need deliberately separated output. Never describe the current raw CSV as a price-history database.
+The scraper skips complete saved rows by default and re-fetches selected rows with `--refresh`. Use a separate `--output-dir` for each batch and preserve snapshots before refreshing. The current raw CSV is not a price-history database.
 
 Keep one collector running at a time. Retain the five-second delay and existing access-stop behavior. Add verified HTTP-200 challenge recognition when representative responses are available. Ordinary transient errors can have a small bounded retry policy; access restrictions stop the run.
 
@@ -144,14 +148,18 @@ Collect a stable core plus candidate fields during the extraction pilot. Keeping
 | Listing city | Normalize source/URL evidence | Candidate categorical input |
 | Fuel and transmission | Collect when reliably available | Test as additional features |
 | Engine displacement | Collect where applicable; retain provenance | Test as an additional feature |
-| Assembly and registration city | Inspect availability during pilot; add extraction only if useful and reliable | Optional experiments |
-| Posting date | Collect if reliably available | Freshness and temporal evaluation |
+| Assembly and body type | Collect from verified source fields; preserve unknown values | Include in feature comparisons |
+| Registration year | Collect only when explicitly stated; record its source and meaning | Optional feature experiment; do not replace model year |
+| Listing date and its meaning | Collect the displayed date; distinguish posted, updated, or unknown | Freshness and temporal evaluation; not a required prediction input |
+| Registration location and colour | Excluded by the user's scope decision | No pilot input role |
 | Parse status, missing fields, quality flags | Always retain | Diagnostics and filtering; excluded from model inputs |
 | Seller contacts and unrelated personal data | Do not add to normal data schema | No modeling role |
 
 Do not equate manufacturing year, registration year, posting date, and collection date. Resolve what the labelled year means in representative listings.
 
-Avoid turning sales descriptions such as 'excellent condition' into a condition score in the first experiment. Their semantics and availability require their own audit. Condition remains an acknowledged omitted variable if no reliable input is available.
+Subjective seller claims such as 'excellent condition' or 'perfect condition' are excluded from condition modeling. Condition remains an acknowledged omitted variable in the current scope.
+
+The agreed collection additions and missing-value rules are recorded in [the collection schema](../../configs/collection_schema.json). This decision contract precedes scraper implementation. Listing city remains distinct from excluded registration location.
 
 Before bulk collection, produce `reports/pilot/field_decisions.md` with completeness, reliability, customer input feasibility, and collect/use/defer decisions for each candidate field.
 
@@ -193,8 +201,8 @@ Begin with a small experiment matrix:
 |---|---|---|
 | F0 | Make, model, year, mileage, city | Can a simple available schema produce useful estimates? |
 | F1 | F0 plus reviewed variant | Does trim identity explain important price differences? |
-| F2 | F1 plus fuel, transmission, applicable engine displacement | Do technical attributes add value beyond family and variant? |
-| F3, only if warranted | F2 plus reliable assembly or registration information | Does the extra collection and form complexity pay off? |
+| F2 | F1 plus fuel, transmission, applicable engine displacement, assembly, and body type | Do these attributes add value beyond family and variant? |
+| F3, only if warranted | F2 plus explicitly sourced registration year or a valid registration-year gap | Does registration timing add useful information after model year and assembly? |
 
 Variant remains preserved even in F0. If dropping it causes large within-family errors, that is evidence against releasing F0, not permission to erase variants from the raw dataset.
 

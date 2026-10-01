@@ -20,6 +20,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from collector.fields import OPTIONAL_COLUMNS, extract_fields
+
 BASE_URL = "https://www.pakwheels.com"
 SEARCH_URL = BASE_URL + "/used-cars/search/-/?page={page}"
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -32,7 +34,7 @@ COLUMNS = [
     "listing_id", "car_title", "year", "price_pkr", "mileage_km",
     "fuel", "transmission", "engine_cc", "listing_city", "source_url",
     "collected_at", "parse_status", "missing_fields",
-]
+] + OPTIONAL_COLUMNS
 
 AD_PATH = re.compile(r"/used-cars/.+-for-sale-in-.+-\d+/?$", re.I)
 YEAR_PATTERN = re.compile(r"\b(?:19|20)\d{2}\b")
@@ -98,6 +100,9 @@ def parse_car(html, url):
     """Parse the visible main listing. Null fields are preserved for debugging."""
     soup = BeautifulSoup(html, "lxml")
     heading = soup.find("h1")
+    title = normalize_text(heading.get_text(" ", strip=True)) if heading else ""
+    title_years = YEAR_PATTERN.findall(title)
+    optional = extract_fields(soup, url, title, int(title_years[-1]) if title_years else None)
 
     # Exclude invisible scripts/styles; retain document order of visible text.
     for node in soup.select("script, style, noscript, svg"):
@@ -169,6 +174,7 @@ def parse_car(html, url):
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "parse_status": "complete" if not missing else "incomplete",
         "missing_fields": ", ".join(missing),
+        **optional,
     }
     return row, primary[:3000]
 
@@ -184,22 +190,26 @@ def save_debug(html, url, row, text_preview):
     )
 
 
-def load_existing():
-    if not RAW_FILE.exists():
+def load_existing(output_dir=None):
+    raw_file = Path(output_dir) / RAW_FILE.name if output_dir is not None else RAW_FILE
+    if not raw_file.exists():
         return {}
-    previous = pd.read_csv(RAW_FILE, dtype={"listing_id": "string"})
+    previous = pd.read_csv(raw_file, dtype={"listing_id": "string"})
     if "source_url" not in previous.columns:
         return {}
     previous = previous.where(pd.notna(previous), None)
     return {str(row["source_url"]): row for row in previous.to_dict("records")}
 
 
-def save_csv(records):
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+def save_csv(records, output_dir=None):
+    directory = Path(output_dir) if output_dir is not None else DATA_DIR
+    raw_file = directory / RAW_FILE.name if output_dir is not None else RAW_FILE
+    clean_file = directory / CLEAN_FILE.name if output_dir is not None else CLEAN_FILE
+    directory.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(records.values(), columns=COLUMNS)
-    df.to_csv(RAW_FILE, index=False)
+    df.to_csv(raw_file, index=False)
     clean = df[df["parse_status"] == "complete"].copy()
-    clean.to_csv(CLEAN_FILE, index=False)
+    clean.to_csv(clean_file, index=False)
     return len(df), len(clean)
 
 
@@ -232,6 +242,9 @@ def main():
     parser.add_argument("--ads", type=int, default=10, help="Maximum listing URLs per run (default: 10)")
     parser.add_argument("--delay", type=float, default=5, help="Seconds between HTTP requests (default: 5)")
     parser.add_argument("--url", type=str, help="Test one specific permitted car listing URL")
+    parser.add_argument("--output-dir", type=Path, help="Separate batch directory; default: data/raw/current")
+    parser.add_argument("--refresh", action="store_true", help="Re-fetch selected saved complete listings to populate the new schema")
+    parser.add_argument("--start-page", type=int, default=1, help="First search page (default: 1)")
     parser.add_argument("--contact", default="your-email@example.com", help="Research collector contact address")
     parser.add_argument("--self-test", action="store_true", help="Run parser tests without network")
     args = parser.parse_args()
@@ -239,8 +252,10 @@ def main():
     if args.self_test:
         run_self_test()
         return
-    if args.pages < 1 or args.ads < 1 or args.delay < 1:
-        parser.error("--pages and --ads must be >= 1, and --delay must be >= 1 second")
+    if args.pages < 1 or args.ads < 1 or args.start_page < 1 or args.delay < 1:
+        parser.error("--pages, --ads and --start-page must be >= 1, and --delay must be >= 1 second")
+    if args.output_dir and args.output_dir.resolve() == (PROJECT_DIR / "data" / "raw" / "baseline_2026-10-01").resolve():
+        parser.error("The preserved baseline cannot be used as an output directory")
     if args.url:
         parsed = urlsplit(args.url)
         if parsed.scheme != "https" or parsed.hostname not in {"www.pakwheels.com", "pakwheels.com"} or not AD_PATH.fullmatch(parsed.path):
@@ -251,12 +266,12 @@ def main():
         "User-Agent": f"CarPriceResearch/0.2 (contact: {args.contact})",
         "Accept": "text/html,application/xhtml+xml",
     })
-    records = load_existing()
+    records = load_existing(args.output_dir)
     links = [args.url] if args.url else []
     try:
         if not args.url:
             discovered = dict()
-            for page in range(1, args.pages + 1):
+            for page in range(args.start_page, args.start_page + args.pages):
                 search_url = SEARCH_URL.format(page=page)
                 print(f"[SEARCH] Page {page}: {search_url}")
                 html = fetch_page(session, search_url, args.delay)
@@ -274,7 +289,7 @@ def main():
             links = list(discovered)[:args.ads]
 
         for number, link in enumerate(links[:args.ads], 1):
-            if link in records and records[link].get("parse_status") == "complete":
+            if not args.refresh and link in records and records[link].get("parse_status") == "complete":
                 print(f"[{number}/{len(links)}] Already saved: {link}")
                 continue
             print(f"[{number}/{len(links)}] Fetching: {link}")
@@ -297,7 +312,7 @@ def main():
                 print(f"[INCOMPLETE] Missing: {row['missing_fields']}")
                 save_debug(html, link, row, preview)
                 print(f"[DEBUG] Saved HTML and text sample under {DEBUG_DIR}/")
-            total, complete = save_csv(records)  # Preserve results as the crawl proceeds.
+            total, complete = save_csv(records, args.output_dir)  # Preserve results as the crawl proceeds.
             print(f"[CSV] {complete} clean rows / {total} total rows")
 
     except AccessRestricted as exc:
@@ -305,10 +320,11 @@ def main():
     except requests.RequestException as exc:
         print(f"[STOP] Network or HTTP error: {exc}")
     finally:
-        total, complete = save_csv(records)
+        total, complete = save_csv(records, args.output_dir)
         session.close()
-        print(f"[DONE] {CLEAN_FILE}: {complete} complete records")
-        print(f"[DONE] {RAW_FILE}: {total} total records (including incomplete)")
+        directory = args.output_dir if args.output_dir is not None else DATA_DIR
+        print(f"[DONE] {directory / CLEAN_FILE.name}: {complete} complete records")
+        print(f"[DONE] {directory / RAW_FILE.name}: {total} total records (including incomplete)")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,26 @@
+{
+  "schema_version": 2,
+  "vehicle_type": "car",
+  "status": "implemented_and_validated_on_ten_listing_pages",
+  "target": "price_pkr",
+  "existing_vehicle_fields": [
+    "car_title", "year", "mileage_km", "fuel", "transmission", "engine_cc", "listing_city"
+  ],
+  "identity_fields_to_normalize": ["make", "model", "variant"],
+  "new_vehicle_fields_to_collect": ["assembly", "body_type", "registration_year"],
+  "new_listing_metadata_to_collect": ["listing_date", "listing_date_type"],
+  "provenance_and_status_fields": [
+    "identity_status", "registration_year_meaning", "registration_year_source",
+    "registration_year_status", "field_provenance", "collection_schema_version"
+  ],
+  "excluded_additions": ["registration_location", "colour", "seller_condition_claims"],
+  "current_parser_required_fields": ["car_title", "year", "price_pkr", "mileage_km"],
+  "missing_value_policy": "Preserve null. New optional fields do not invalidate an otherwise parser-complete row. Never infer registration year from model year.",
+  "registration_year_policy": "Retain an explicitly stated registration year with its extraction source and meaning. Distinguish first Pakistan registration, another jurisdiction, and unknown meaning. Do not assume a transfer year is first registration. Modeling inclusion remains experimental.",
+  "listing_date_policy": "Record the displayed date and whether its verified label means posted, updated, or unknown. Preserve collected_at separately. Use listing dates for freshness and evaluation initially, not as a required prediction-form input.",
+  "verified_listing_date_label": "Last Updated",
+  "identity_policy": "Use URL-matched structured make and model. Extract variant only when the heading matches that family and ends with the model year. Normalize whitespace and preserve source spelling. Canonical catalogue review remains pending.",
+  "implementation": "collector/fields.py",
+  "source_mapping": "docs/collection-field-mapping.md",
+  "notes": "This records the agreed contract; runtime extraction lives in collector/fields.py. listing_city remains and differs from excluded registration_location. Subjective seller descriptions are not condition features. A factual registration statement may be extracted without storing the full seller description. Validation is a ten-page sample, not proof of marketplace-wide availability or factual correctness."
+}

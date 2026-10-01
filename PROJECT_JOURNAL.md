@@ -25,10 +25,10 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 1 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Working script retained with organized output paths | Two offline parser checks and the export/resume storage check pass; no new live crawl performed |
+| Car collector | Original logic extended with optional attributes and collection controls | Fifteen behavioral tests, two parser self-tests, and ten live-page extractions pass |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
-| Extraction correctness audit | Offline file checks completed; source verification pending | `reports/pilot/initial_audit.md` and a pending identity worksheet generated |
-| Make/model/variant normalization | Planned | Current data retains titles rather than canonical identity columns |
+| Extraction correctness audit | Offline checks completed; user confirms the ten records are accurate | Accuracy confirmation is user-reported; identity normalization and additional-field design remain pending |
+| Make/model/variant normalization | Source-normalized identity extracted on ten pages | Canonical catalogue review remains pending; unresolved identities are explicit |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
 | Feature selection | Candidate feature sets planned | No feature comparison has run |
 | Algorithm selection | Pending experiments | Baseline, Ridge, Random Forest, and CatBoost are pilot candidates |
@@ -37,7 +37,7 @@ Update this file as part of future project work; its creation does not establish
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: verify the ten baseline rows against available source evidence and complete the identity review worksheet. Correct any demonstrated systematic extraction errors before collecting the next small batch. M0 preservation and offline checks are complete; manual verification remains open.
+Next work: add reviewed-family sampling and general batch accounting, then collect the varied 100-300-record field pilot. Review canonical identities and source assembly values during that pilot. The implemented schema and ten-page results are in [the collection field mapping](docs/collection-field-mapping.md). Registration year remains optional and experimental; observed listing dates are updates, not posting dates.
 
 ## 3. The project story so far
 
@@ -113,6 +113,54 @@ Artifacts: baseline `manifest.json`, `environment.json`, and `requirements-lock.
 
 Next step: manually review the ten rows and record available source evidence and make/model/variant decisions before M1 collection.
 
+### J007: accepting the sample confirmation and examining missing attributes
+
+Recorded on 1 October 2026.
+
+The user confirmed that the ten collected records contain accurate data and requested a reasoned explanation of current and additional attributes. This confirmation is accepted as user-reported source verification. Identity normalization and training suitability are separate questions.
+
+The existing CSV has 13 fields. Vehicle details include title, year, mileage, fuel, transmission, engine displacement, and listing city. Asking price is the target; the remaining columns record provenance and parser diagnostics. Make/model/variant are present in title wording but have not been separated into canonical columns.
+
+The handbook proposes additional assembly, registration location, and body-type attributes. A read-only web inspection of the sample Corolla listing also showed colour, a listing date, and inspection information. Availability on one listing does not establish coverage across the marketplace or predictive improvement. Attribute priorities and their actual extraction semantics remain under discussion.
+
+Next work: settle which attributes to retain during the collection pilot, normalize vehicle identity, and compare feature sets on consistent evaluation groups. Additional-field extraction checks remain necessary as fields are introduced; repeating the baseline accuracy audit is unnecessary.
+
+### J008: consolidating the next collection schema
+
+Recorded on 1 October 2026.
+
+The user accepted assembly and body type, chose to retain listing date and registration year, and excluded registration location, colour, and subjective seller condition claims. Listing city remains part of the existing data.
+
+These choices are recorded in `configs/collection_schema.json` and the active pilot plan. Registration year is an optional collected attribute whose incremental modeling value must be evaluated; it does not replace model year or establish physical usage. Listing date is initially metadata for freshness and evaluation, with posted/updated/unknown semantics preserved separately from collection time.
+
+The next implementation begins with representative source mapping because registration year may be absent or ambiguous and a displayed date may describe an update. New optional attributes must not invalidate otherwise complete rows. Identity normalization remains necessary. No new field extraction or live batch was run while recording this decision.
+
+### J009: implementing and validating the agreed collection fields
+
+Date: 1 October 2026. Stage: M0-to-M1 collection preparation. Status: completed for the ten-page validation sample.
+
+Goal: implement assembly, body type, registration year, listing date, and make/model/variant extraction without changing the original core parser or starting application infrastructure.
+
+Source investigation: fetched the ten original listing URLs sequentially, with five seconds between requests. Four initial inspection requests established the markup; the validation command fetched six remaining pages and reused those four cached files. All requests succeeded. This is new-field validation, not a repeated requirement to establish the user-confirmed baseline accuracy.
+
+Problems found: pages embed JSON-LD for recommendations as well as the current car. The visible date is labeled `Last Updated`. Registration year is not in the labeled specification table and can appear in explicit factual seller comments. The two Audi e-tron listings report different assembly values, requiring later source-quality review.
+
+Changes: added `collector/fields.py` as an offline extraction module. Structured identity must match the current listing URL; conflicting products remain unresolved. Explicit table labels supply assembly/body type/date. Registration extraction accepts factual statements, preserves unknown jurisdiction meaning, and never substitutes model year or ownership transfer. Added provenance, status, and schema-version columns. Variant names retain source wording and are pending catalogue review.
+
+Collection controls: `--output-dir` isolates batches, `--refresh` deliberately re-fetches selected saved rows, and `--start-page` lets collection progress beyond the first page. Old-schema rows can be resumed/exported without fabricating new attributes. The preserved baseline is blocked as a CLI output directory. The general collector still caps selected URLs with `--ads`; complete general batch accounting and family sampling remain pending.
+
+Results: separate batch `field_validation_2026-10-01` contains 10/10 parser-complete rows. Make, model, variant, assembly, body type, and listing date each have 10/10 non-null values. Registration year has 9/10, all with unknown registration meaning. All ten date labels mean updated. Fortuner model year 2022 has stated registration year 2023; Raize model year 2021 has stated registration year 2025. Neither difference establishes usage or condition.
+
+Verification: inspected table labels and explicit registration evidence across all ten cached pages. Fifteen behavioral tests and the two original parser self-tests pass. The enriched raw/clean exports pass the existing integrity audit. Both preserved baseline CSVs and both original active CSVs retain their original checksum; the original review worksheet was not rewritten. The validation batch has cached HTML hashes and a request/evidence manifest. Reproduction is offline via `python -m scripts.validate_collection`.
+
+Limitations: ten listings do not establish marketplace-wide availability or factual correctness. The same ten IDs are not additional independent training vehicles. Initial inspection downloads predate the manifest and use cache-file timestamps. Standalone registration parsing deliberately leaves unsupported free-text formats unresolved. No model training or feature comparison has run.
+
+Lesson: verify source labels before assigning meaning. An update date cannot become a posting date through normalization, and exact extraction does not certify seller-entered assembly information.
+
+Artifacts: [field mapping and results](docs/collection-field-mapping.md), [schema contract](configs/collection_schema.json), private batch under `data/raw/field_validation_2026-10-01/`, private audit under `reports/pilot/field_validation_2026-10-01/`.
+
+Next step: implement controlled family sampling and general collection summaries, then collect 100-300 varied records to measure missingness, resolve identities, and choose the first modeling scope.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -123,13 +171,16 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H002 | Generic skipped-row messages hid extraction causes | Historical handbook account | Preserve incomplete rows, missing fields, and debug evidence | Mechanism present; fresh verification pending |
 | H003 | Alphabetical URL sorting could skew the selected sample | Historical handbook account and ordered-discovery implementation | Preserve source discovery order with ordered deduplication | Mechanism present; sample representativeness still needs review |
 | H004 | Production infrastructure appeared too early in the execution plan | User clarification in this conversation | Introduce a separate data/modeling pilot and defer production work | Planning correction completed |
-| H005 | Parser-complete data can still be wrong or unsuitable for training | Current completeness rule checks only four fields | Manually audit source values and add training eligibility rules | Local audit completed; source verification open |
-| H006 | Titles contain model and variant details without normalized columns | Current CSV schema and sample titles | Reviewed catalogue, conservative resolution, ambiguity queue | Open |
-| H007 | Missing engine displacement needs context for EVs | Three current electric-labelled rows lack `engine_cc` | Verify non-applicability; retain provenance instead of inventing zero | Identified; source verification pending |
-| H008 | Repeated runs revisit early pages and count selected URLs rather than new rows | Current scraper control flow | Minimal start-page/batch controls and explicit run counters | Known limitation; change planned |
+| H005 | Parser completeness does not establish training suitability | Current completeness rule checks only four fields | Accept baseline accuracy confirmation; define identity and training eligibility rules; review new batches | Baseline accuracy confirmed by user; training suitability open |
+| H006 | Titles contain model and variant details without canonical columns | Original CSV schema and source headings | URL-matched family and provisional variant extraction added in J009; reviewed catalogue still needed | Partly implemented; canonical review open |
+| H007 | Missing engine displacement needs context for EVs | Three electric listings show Battery Capacity instead of Engine Capacity in inspected tables | Preserve empty displacement rather than inventing zero | Source context confirmed on three pages in J009; general applicability policy pending |
+| H008 | Repeated runs revisit early pages and count selected URLs rather than new rows | Current scraper control flow | Added start-page, output-directory, and refresh controls; general run accounting still needed | Partly resolved in J009 |
 | H009 | Ten varied records cannot establish broad model reliability | Current sample size and lack of training results | Collect deeply within a limited, reviewed scope and evaluate held-out groups | Open |
 | H010 | More data could multiply parser errors before they are discovered | Risk identified during planning | Audit early batches and resolve systematic errors before expanding | Prevention planned |
 | H011 | Ignore patterns hid project records and misspelled output filenames | Workspace inspection during J006 | Replace them with explicit private-data patterns and retain trackable documentation | Fixed in working tree |
+| H012 | Recommended cars also appear in structured data | Initial live-page inspection in J009 | Match structured product offer URL to the current listing; reject conflicts | Fixed; contamination tests pass |
+| H013 | A displayed listing date could be mistaken for posting date | All ten inspected labels say Last Updated | Store `listing_date_type=updated`; keep collection time separate | Semantic mapping fixed; later evaluation must respect it |
+| H014 | Source assembly values need quality review | Two e-tron listings report Imported and Local | Preserve both facts; examine model/assembly patterns during broader pilot | Open |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -146,6 +197,10 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D007 | Keep preprocessing reusable between training and prediction | Prevent a demo from interpreting inputs differently from the trained model | Planned implementation |
 | D008 | Build a local saved-predictor demo before large training | Verify the complete workflow at modest cost | Planned; CLI then a small local UI |
 | D009 | Reassess framework and infrastructure after pilot results | Actual workflows, latency, memory, and durability needs remain unknown | Deferred; production handover milestone |
+| D010 | Add assembly, body type, registration year, and listing date | User-selected scope; explicit date semantics and unknown values are retained | Implemented and validated on ten pages in J009; broader pilot pending |
+| D011 | Exclude registration location, colour, and subjective seller condition claims | User does not want these additions; condition language is unreliable | Accepted pilot scope; listing city remains |
+| D012 | Retain explicit factual registration statements with unknown meaning when needed | Registration year was present as factual text on nine sample pages | Implemented; no full-description storage or subjective condition features |
+| D013 | Treat observed Last Updated dates as freshness metadata | Date labels do not establish original posting time | Implemented; use grouped collection batches for later chronological evaluation |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -164,7 +219,7 @@ Observed on 1 October 2026 from the current files. This is a dated snapshot; fut
 | Stored parser completeness | 100% | Ten complete rows divided by ten raw rows |
 | Missing engine displacement | 3 of 10 | All three are labelled Electric; source correctness not yet audited |
 | Represented listing cities | 5 | City labels in the CSV |
-| Reviewed source-correct rows | Not measured | Manual audit pending |
+| Source accuracy confirmation | User confirms all 10 | Confirmation received after this snapshot's initial file inspection; no independent ten-row verification claimed |
 | Canonically resolved identities | Not measured | Normalization pending |
 | Unique vehicle/repost groups | Not measured | Grouping pending |
 | Training-eligible records | Not measured | Model-specific quality rules pending |
@@ -198,6 +253,7 @@ The handbook records a different checksum for its recovered original scraper. By
 | Batch ID | Date | Scope | Requests | Stored rows | Eligible groups | Evidence |
 |---|---|---|---|---:|---|---|
 | Legacy sample S001 | 1 October 2026 | Car listings in current CSVs | Not available | 10 | Not measured | User-reported collection; current files inspected |
+| field_validation_2026-10-01 | 1 October 2026 | Same ten car listing IDs, extended attributes | 10 successful detail requests; 4 initial inspection and 6 manifest-recorded | 10 refreshed observations; 0 new listing IDs | Not measured | Cached HTML checksums, batch manifest, integrity audit, J009 |
 
 For future batches add discovery/detail request counts, duplicates, access stops, ordinary failures, incomplete rows, exclusion counts, review sample size, actual discrepancies, elapsed time, and dataset checksum. Distinguish newly added rows from cumulative totals.
 
@@ -218,6 +274,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - A production architecture reference and an active pilot plan have been written.
 - The workspace is organized, the initial sample is preserved, and offline audit/review files are generated.
 - Six behavioral tests and both existing parser self-tests pass in the current environment.
+- J009 extends verification to fifteen behavioral tests and a separate ten-page new-field sample. Registration year is present on nine pages; other agreed fields are present on all ten. These remain extraction results, not model scores.
 - A local prediction demo, trained model, measured regression result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -225,7 +282,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J007: <specific event or milestone>
+### J010: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 
