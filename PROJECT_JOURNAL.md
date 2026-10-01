@@ -25,9 +25,9 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 1 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Original logic extended with optional attributes and collection controls | Fifteen behavioral tests, two parser self-tests, and ten live-page extractions pass |
+| Car collector | Optional attributes, family sampling, bounded requests, and batch accounting implemented | Twenty-five offline behavioral tests pass; previous ten-page live validation remains evidence for field extraction |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
-| Extraction correctness audit | Offline checks completed; user confirms the ten records are accurate | Accuracy confirmation is user-reported; identity normalization and additional-field design remain pending |
+| Extraction correctness audit | Original ten records confirmed by user; added fields checked on ten source pages in J009 | Canonical identity and broader batch quality review remain pending |
 | Make/model/variant normalization | Source-normalized identity extracted on ten pages | Canonical catalogue review remains pending; unresolved identities are explicit |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
 | Feature selection | Candidate feature sets planned | No feature comparison has run |
@@ -37,7 +37,7 @@ Update this file as part of future project work; its creation does not establish
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: add reviewed-family sampling and general batch accounting, then collect the varied 100-300-record field pilot. Review canonical identities and source assembly values during that pilot. The implemented schema and ten-page results are in [the collection field mapping](docs/collection-field-mapping.md). Registration year remains optional and experimental; observed listing dates are updates, not posting dates.
+Next work: the user runs the prepared [collection pilot command](docs/collection-pilot-run.md), then reports completion. The agent will inspect saved results offline, measure missingness by family/year/city, and review identity and assembly quality. Live collection is reserved for the user in [AGENTS.md](AGENTS.md). No new collection batch has been executed in J010.
 
 ## 3. The project story so far
 
@@ -161,6 +161,32 @@ Artifacts: [field mapping and results](docs/collection-field-mapping.md), [schem
 
 Next step: implement controlled family sampling and general collection summaries, then collect 100-300 varied records to measure missingness, resolve identities, and choose the first modeling scope.
 
+### J010: preparing controlled sampling and a user-operated collection handoff
+
+Date: 1 October 2026. Stage: M1 preparation. Status: code preparation completed; live pilot awaiting user execution.
+
+User instruction: prepare the next step but never launch live scraping. When a run is needed, supply a PowerShell command, stop, and wait for the user to finish and ask to continue. Recorded this persistent workflow in `AGENTS.md`.
+
+Starting point: schema version 2 and ten-page field validation were complete. The scraper still relied on general search order, counted selected saved URLs against `--ads`, and lacked general run accounting.
+
+Source evidence: inspected cached HTML only. Those pages link to Corolla, City, Civic, and Alto search routes. Their live result pages and current availability remain unverified in this step.
+
+Implementation: added validated sampling configuration with four 40-row family targets and 20 general-discovery rows. Targets count complete extracted family matches, not every request or title. Round-robin collection alternates groups, with at most 250 detail attempts and 25 search pages per run. Request failures consume detail budgets; duplicate IDs and saved-row skips do not. Unexpected-family and incomplete observations remain in raw storage.
+
+Architecture: `collector/sampling.py` validates search definitions and family matching; `collector/runner.py` handles sequencing, limits, and resume; `collector/run_log.py` records requests, outcomes, and summaries. `scraper.py` retains fetching, parsing, storage helpers, and the CLI. No application framework or new dependency was introduced.
+
+Durability and evidence: parsed rows are saved incrementally. CSV, manifest, and log writes use temporary-file replacement. Ctrl+C and access restrictions preserve completed work and record a stop status. Batch plan mismatches are rejected before collection. Representative HTML is retained for the first 50 complete observations per run, all flagged cases, and an expected 10% hash sample afterward. The batch manifest distinguishes cumulative rows from latest-run requests and selections.
+
+Verification: 25 behavioral tests passed with `requests.sessions.Session.request` blocked. New checks exercise alternating groups, quotas, incomplete and unexpected-family retention, duplicate IDs, skipped saved rows, ordinary request failures, access stops, operator interruption, empty searches, completed-plan resume, changed-plan rejection, and invalid configuration. All test outputs were temporary. No live request, scraper command, or new collection batch was launched by the agent in this step.
+
+Results: ready-to-run configuration targets 180 complete matches across five groups; actual rows, request outcomes, field availability, and family coverage are `Not run`. The 180 target is not a measured result or prediction-support claim. Existing baseline and validation artifacts remain unchanged.
+
+Limitations: family search behavior still needs the user-operated run. Marketplace ordering and featured ads can bias selection; cities, years, and variants have no balance guarantee. Listing IDs do not establish independent vehicle/repost groups. General discovery can include the selected families. Group assignments and parser completeness do not establish training eligibility.
+
+Artifacts: [sampling configuration](configs/collection_pilot.json), [run instructions](docs/collection-pilot-run.md), `tests/test_collection_runner.py`, and the collection modules.
+
+Next step: user executes the supplied command into `data/raw/pilot_batch_001/` and reports completion. Then audit saved files and evidence offline, record actual results, and choose the first modeling scope. Further live collection remains a user-run handoff.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -174,7 +200,7 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H005 | Parser completeness does not establish training suitability | Current completeness rule checks only four fields | Accept baseline accuracy confirmation; define identity and training eligibility rules; review new batches | Baseline accuracy confirmed by user; training suitability open |
 | H006 | Titles contain model and variant details without canonical columns | Original CSV schema and source headings | URL-matched family and provisional variant extraction added in J009; reviewed catalogue still needed | Partly implemented; canonical review open |
 | H007 | Missing engine displacement needs context for EVs | Three electric listings show Battery Capacity instead of Engine Capacity in inspected tables | Preserve empty displacement rather than inventing zero | Source context confirmed on three pages in J009; general applicability policy pending |
-| H008 | Repeated runs revisit early pages and count selected URLs rather than new rows | Current scraper control flow | Added start-page, output-directory, and refresh controls; general run accounting still needed | Partly resolved in J009 |
+| H008 | Repeated runs counted saved/duplicate URLs against new collection limits | Original scraper control flow | Added controlled family searches, detail-attempt budgets, resume skips, and explicit request/row accounting in J010 | Implemented; offline recovery/budget tests pass; live pilot awaits user |
 | H009 | Ten varied records cannot establish broad model reliability | Current sample size and lack of training results | Collect deeply within a limited, reviewed scope and evaluate held-out groups | Open |
 | H010 | More data could multiply parser errors before they are discovered | Risk identified during planning | Audit early batches and resolve systematic errors before expanding | Prevention planned |
 | H011 | Ignore patterns hid project records and misspelled output filenames | Workspace inspection during J006 | Replace them with explicit private-data patterns and retain trackable documentation | Fixed in working tree |
@@ -201,6 +227,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D011 | Exclude registration location, colour, and subjective seller condition claims | User does not want these additions; condition language is unreliable | Accepted pilot scope; listing city remains |
 | D012 | Retain explicit factual registration statements with unknown meaning when needed | Registration year was present as factual text on nine sample pages | Implemented; no full-description storage or subjective condition features |
 | D013 | Treat observed Last Updated dates as freshness metadata | Date labels do not establish original posting time | Implemented; use grouped collection batches for later chronological evaluation |
+| D014 | The user runs every live collection command | Explicit user instruction during J010 | Persistent workflow in AGENTS.md; agent prepares commands and waits for completion |
+| D015 | Use four family quotas plus general discovery for the first field pilot | Reduce dependence on one general-results page while retaining some broader examples | Target 180 complete matches, not yet collected; actual scope reviewed after results |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -275,6 +303,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - The workspace is organized, the initial sample is preserved, and offline audit/review files are generated.
 - Six behavioral tests and both existing parser self-tests pass in the current environment.
 - J009 extends verification to fifteen behavioral tests and a separate ten-page new-field sample. Registration year is present on nine pages; other agreed fields are present on all ten. These remain extraction results, not model scores.
+- J010 extends offline coverage to twenty-five behavioral tests and prepares bounded family sampling with auditable outputs. The user-operated collection pilot is awaiting execution; its quotas are not results.
 - A local prediction demo, trained model, measured regression result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -282,7 +311,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J010: <specific event or milestone>
+### J011: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

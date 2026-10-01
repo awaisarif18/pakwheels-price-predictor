@@ -10,7 +10,9 @@ incomplete rows in pakwheels_raw.csv and complete rows in pakwheels_clean.csv.
 """
 
 import argparse
+import math
 import re
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +23,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from collector.fields import OPTIONAL_COLUMNS, extract_fields
+from collector.runner import CollectionSettings, run_collection
+from collector.sampling import SearchSpec, load_plan
 
 BASE_URL = "https://www.pakwheels.com"
 SEARCH_URL = BASE_URL + "/used-cars/search/-/?page={page}"
@@ -196,7 +200,9 @@ def load_existing(output_dir=None):
         return {}
     previous = pd.read_csv(raw_file, dtype={"listing_id": "string"})
     if "source_url" not in previous.columns:
-        return {}
+        raise ValueError(f"Cannot resume {raw_file}: source_url column is missing")
+    if previous["source_url"].isna().any() or previous["source_url"].duplicated().any():
+        raise ValueError(f"Cannot resume {raw_file}: source URLs are empty or duplicated")
     previous = previous.where(pd.notna(previous), None)
     return {str(row["source_url"]): row for row in previous.to_dict("records")}
 
@@ -207,9 +213,13 @@ def save_csv(records, output_dir=None):
     clean_file = directory / CLEAN_FILE.name if output_dir is not None else CLEAN_FILE
     directory.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(records.values(), columns=COLUMNS)
-    df.to_csv(raw_file, index=False)
+    raw_temporary = raw_file.with_suffix(".csv.tmp")
+    df.to_csv(raw_temporary, index=False)
+    raw_temporary.replace(raw_file)
     clean = df[df["parse_status"] == "complete"].copy()
-    clean.to_csv(clean_file, index=False)
+    clean_temporary = clean_file.with_suffix(".csv.tmp")
+    clean.to_csv(clean_temporary, index=False)
+    clean_temporary.replace(clean_file)
     return len(df), len(clean)
 
 
@@ -238,10 +248,12 @@ def run_self_test():
 
 def main():
     parser = argparse.ArgumentParser(description="Authorized PakWheels price-research collector")
-    parser.add_argument("--pages", type=int, default=1, help="Search pages to examine (default: 1)")
-    parser.add_argument("--ads", type=int, default=10, help="Maximum listing URLs per run (default: 10)")
+    parser.add_argument("--pages", type=int, help="Search-page limit for general discovery (default: 1)")
+    parser.add_argument("--ads", type=int, help="Maximum detail request attempts; saved-row skips do not consume this budget (default: 10, or plan total)")
     parser.add_argument("--delay", type=float, default=5, help="Seconds between HTTP requests (default: 5)")
-    parser.add_argument("--url", type=str, help="Test one specific permitted car listing URL")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--url", type=str, help="Test one specific permitted car listing URL")
+    selection.add_argument("--sampling-plan", type=Path, help="JSON family searches, quotas, and request/page limits")
     parser.add_argument("--output-dir", type=Path, help="Separate batch directory; default: data/raw/current")
     parser.add_argument("--refresh", action="store_true", help="Re-fetch selected saved complete listings to populate the new schema")
     parser.add_argument("--start-page", type=int, default=1, help="First search page (default: 1)")
@@ -252,7 +264,7 @@ def main():
     if args.self_test:
         run_self_test()
         return
-    if args.pages < 1 or args.ads < 1 or args.start_page < 1 or args.delay < 1:
+    if (args.pages is not None and args.pages < 1) or (args.ads is not None and args.ads < 1) or args.start_page < 1 or not math.isfinite(args.delay) or args.delay < 1:
         parser.error("--pages, --ads and --start-page must be >= 1, and --delay must be >= 1 second")
     if args.output_dir and args.output_dir.resolve() == (PROJECT_DIR / "data" / "raw" / "baseline_2026-10-01").resolve():
         parser.error("The preserved baseline cannot be used as an output directory")
@@ -260,71 +272,28 @@ def main():
         parsed = urlsplit(args.url)
         if parsed.scheme != "https" or parsed.hostname not in {"www.pakwheels.com", "pakwheels.com"} or not AD_PATH.fullmatch(parsed.path):
             parser.error("--url must be a PakWheels car advertisement URL")
-
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": f"CarPriceResearch/0.2 (contact: {args.contact})",
-        "Accept": "text/html,application/xhtml+xml",
-    })
-    records = load_existing(args.output_dir)
-    links = [args.url] if args.url else []
+    if args.sampling_plan and (args.pages is not None or args.start_page != 1):
+        parser.error("Set max_pages and start_page in the sampling plan, not CLI page options")
     try:
-        if not args.url:
-            discovered = dict()
-            for page in range(args.start_page, args.start_page + args.pages):
-                search_url = SEARCH_URL.format(page=page)
-                print(f"[SEARCH] Page {page}: {search_url}")
-                html = fetch_page(session, search_url, args.delay)
-                found = listing_links(html)
-                print(f"[SEARCH] Found {len(found)} listing links")
-                if not found:
-                    DEBUG_DIR.mkdir(parents=True, exist_ok=True)
-                    (DEBUG_DIR / f"search_page_{page}.html").write_text(html, encoding="utf-8")
-                    print(f"[DEBUG] Saved {DEBUG_DIR / f'search_page_{page}.html'}")
-                    break
-                for link in found:
-                    discovered[link] = None
-                if len(discovered) >= args.ads:
-                    break
-            links = list(discovered)[:args.ads]
-
-        for number, link in enumerate(links[:args.ads], 1):
-            if not args.refresh and link in records and records[link].get("parse_status") == "complete":
-                print(f"[{number}/{len(links)}] Already saved: {link}")
-                continue
-            print(f"[{number}/{len(links)}] Fetching: {link}")
-            try:
-                html = fetch_page(session, link, args.delay)
-            except AccessRestricted:
-                raise
-            except requests.RequestException as exc:
-                print(f"[REQUEST ERROR] {exc}")
-                continue
-
-            row, preview = parse_car(html, link)
-            records[link] = row
-            if row["parse_status"] == "complete":
-                print(
-                    f"[SUCCESS] {row['car_title']} | PKR {row['price_pkr']:,} | "
-                    f"{row['mileage_km']:,} km"
-                )
-            else:
-                print(f"[INCOMPLETE] Missing: {row['missing_fields']}")
-                save_debug(html, link, row, preview)
-                print(f"[DEBUG] Saved HTML and text sample under {DEBUG_DIR}/")
-            total, complete = save_csv(records, args.output_dir)  # Preserve results as the crawl proceeds.
-            print(f"[CSV] {complete} clean rows / {total} total rows")
-
-    except AccessRestricted as exc:
-        print(f"[STOP] {exc}")
-    except requests.RequestException as exc:
-        print(f"[STOP] Network or HTTP error: {exc}")
-    finally:
-        total, complete = save_csv(records, args.output_dir)
-        session.close()
-        directory = args.output_dir if args.output_dir is not None else DATA_DIR
-        print(f"[DONE] {directory / CLEAN_FILE.name}: {complete} complete records")
-        print(f"[DONE] {directory / RAW_FILE.name}: {total} total records (including incomplete)")
+        if args.sampling_plan:
+            if args.output_dir is None:
+                parser.error("--sampling-plan requires a separate --output-dir")
+            searches = load_plan(args.sampling_plan)
+            budget = args.ads or sum(spec.max_detail_requests for spec in searches)
+        else:
+            budget = args.ads or 10
+            searches = (SearchSpec(
+                "single" if args.url else "general", SEARCH_URL, None, None,
+                1 if args.url else budget, 1 if args.url else budget,
+                args.pages or 1, args.start_page,
+            ),)
+        run_collection(CollectionSettings(
+            searches=searches, output_dir=args.output_dir or DATA_DIR,
+            max_detail_requests=budget, delay=args.delay, contact=args.contact,
+            refresh=args.refresh, cumulative_targets=bool(args.sampling_plan), single_url=args.url,
+        ), sys.modules[__name__])
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

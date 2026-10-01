@@ -8,6 +8,8 @@ Baseline confirmation: the user has confirmed the ten original records are accur
 
 Implementation update, 1 October 2026: schema version 2 is implemented and checked against a separate ten-page validation sample. [Source mapping and results](../collection-field-mapping.md) record the field definitions and limitations. All ten dates were `Last Updated`; nine registration years were explicitly stated, all with unknown meaning. Source identity extraction is implemented; canonical catalogue review remains pending. The scraper now supports `--output-dir`, `--refresh`, and `--start-page`. Prepare family sampling and general batch accounting before the varied 100-300-record collection pilot.
 
+J010 update: family sampling and batch accounting are implemented and verified offline. [The sampling configuration](../../configs/collection_pilot.json) targets 40 Corolla, 40 City, 40 Civic, 40 Alto, and 20 general-discovery complete matches, with bounded request/page limits. These are requested quotas, not collected results. [The run guide](../collection-pilot-run.md) contains the PowerShell command. The user runs all live collection; the agent waits for completion and then performs offline review, following [AGENTS.md](../../AGENTS.md).
+
 ## 1. What we are trying to establish
 
 Use the working scraper to build a trustworthy small dataset, determine which inputs can be collected reliably, compare suitable regression algorithms, and demonstrate predictions locally. Increase the dataset after the full path works and measured errors tell us what to collect next.
@@ -57,7 +59,7 @@ The first changes should solve observed collection problems:
 | Keep batches recoverable | Add an output directory or batch prefix | Current CSVs are repeatedly rewritten |
 | Know what happened | Write a small JSON run summary and failed-URL list | Counts and failures must be auditable |
 | Review extraction | Save permitted representative HTML and raw price text | Parser-complete rows can still be wrong |
-| Resume sensibly | Explain selected URLs, attempted fetches, skipped complete rows, and new rows separately | `--ads` currently caps selected URLs, not newly added data |
+| Resume sensibly | Explain selected URLs, attempted fetches, skipped complete rows, and new rows separately | Implemented in J010; `--ads` now caps actual detail attempts, including failures |
 
 Implement these incrementally. Do not replace the script with a broad ingestion framework before the dataset audit.
 

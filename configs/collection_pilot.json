@@ -1,0 +1,51 @@
+{
+  "plan_version": 1,
+  "purpose": "Field availability and identity pilot; not a claim of prediction support",
+  "searches": [
+    {
+      "name": "toyota_corolla",
+      "url_template": "https://www.pakwheels.com/used-cars/toyota-corolla/688?page={page}",
+      "expected_make": "Toyota",
+      "expected_model": "Corolla",
+      "target_complete_rows": 40,
+      "max_detail_requests": 55,
+      "max_pages": 5
+    },
+    {
+      "name": "honda_city",
+      "url_template": "https://www.pakwheels.com/used-cars/honda-city/664?page={page}",
+      "expected_make": "Honda",
+      "expected_model": "City",
+      "target_complete_rows": 40,
+      "max_detail_requests": 55,
+      "max_pages": 5
+    },
+    {
+      "name": "honda_civic",
+      "url_template": "https://www.pakwheels.com/used-cars/honda-civic/642?page={page}",
+      "expected_make": "Honda",
+      "expected_model": "Civic",
+      "target_complete_rows": 40,
+      "max_detail_requests": 55,
+      "max_pages": 5
+    },
+    {
+      "name": "suzuki_alto",
+      "url_template": "https://www.pakwheels.com/used-cars/suzuki-alto/658?page={page}",
+      "expected_make": "Suzuki",
+      "expected_model": "Alto",
+      "target_complete_rows": 40,
+      "max_detail_requests": 55,
+      "max_pages": 5
+    },
+    {
+      "name": "general",
+      "url_template": "https://www.pakwheels.com/used-cars/search/-/?page={page}",
+      "expected_make": null,
+      "expected_model": null,
+      "target_complete_rows": 20,
+      "max_detail_requests": 30,
+      "max_pages": 5
+    }
+  ]
+}

@@ -102,11 +102,11 @@ Fetch missing evidence only when needed:
 Collect into a new directory with the extended scraper:
 
 ```powershell
-.\.venv\Scripts\python.exe scraper.py --pages 1 --ads 10 --start-page 1 --delay 5 --output-dir data/raw/pilot_batch_001 --contact "your-real-email@example.com"
+.\.venv\Scripts\python.exe scraper.py --pages 1 --ads 10 --start-page 1 --delay 5 --output-dir data/raw/manual_sample_001 --contact "your-real-email@example.com"
 ```
 
 Use `--refresh` to re-fetch selected complete rows in the chosen directory. Existing rows are skipped by default. Old-schema rows retain empty new fields until refreshed; merely exporting them must not invent provenance or a schema version.
 
-`--ads` still caps selected URLs, including skipped saved rows. The validation command records requests and evidence; the general scraper does not yet produce a full run manifest. Add family sampling and general batch accounting before the varied 100-300-record collection pilot. Review canonical identity names and assembly reliability during that pilot.
+Update after J010: `--ads` now caps actual detail attempts; saved-row skips and duplicate IDs do not consume it. Family sampling and general batch accounting are implemented. See [the pilot run guide](collection-pilot-run.md) for the next user-operated batch. Review canonical identity names and assembly reliability during that pilot.
 
-Verification includes fifteen behavioral tests and the two existing parser self-tests. No training or model-performance result exists yet.
+J009 verification included fifteen behavioral tests and the two existing parser self-tests. J010 extended offline coverage to twenty-five behavioral tests, with live requests blocked. No training or model-performance result exists yet.
