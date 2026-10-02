@@ -10,6 +10,7 @@ The current stage is the data and modeling pilot. Reuse the working car collecto
 - [Coding practices reference](docs/reference/production_practices.md)
 - [Collection fields and validation findings](docs/collection-field-mapping.md)
 - [Run the field collection pilot](docs/collection-pilot-run.md)
+- [First pilot quality review and preparation rules](docs/pilot-data-review.md)
 
 ## Current structure
 
@@ -23,20 +24,26 @@ pakwheels-price-predictor/
     sampling.py                 Validated search configuration and family matching
     runner.py                   Bounded collection, resume, and round-robin groups
     run_log.py                  Request accounting and batch summary
+    persistence.py              Bounded retries for Windows file replacement
   pilot/
     audit.py                    Reusable offline CSV audit
     paths.py                    Audit defaults anchored to the project
+    identity.py                 Catalogue-based family and variant resolution
+    evidence.py                 Cached source comparisons and repair evidence
+    quality.py                  Candidate rules and possible-repost groups
+    profile.py                  Coverage and missingness reports
   scripts/
     audit_data.py               Audit command entry point
     validate_collection.py      Reparse cached sample or fetch missing evidence
+    prepare_dataset.py          Offline versioned preparation command
   tests/
     test_audit.py               Data-integrity and review-preservation checks
     test_collection_fields.py   New-field meaning and contamination checks
   configs/
-    pilot_scope.json            Draft; declares no supported models yet
+    pilot_scope.json            Four candidate families; no predictor support yet
     collection_schema.json      Version 2 field decision contract
     collection_pilot.json       Four family quotas plus general discovery
-  catalogues/                   Reviewed identity catalogues will go here
+  catalogues/cars.json           Four families and observed variant labels
   docs/
     plans/                      Pilot and future production plans
     reference/                  Handbook and coding practices
@@ -46,7 +53,8 @@ pakwheels-price-predictor/
       baseline_2026-10-01/       Preserved original sample and collector
       current/                  Active collector CSVs
       field_validation_2026-10-01/  Separate enriched ten-listing sample
-    processed/                  Future normalized training datasets
+      pilot_batch_001/           User-collected 200-record field pilot
+    processed/pilot_batch_001_v2/  Final normalized/candidate datasets
     debug_pages/                Private HTML/text diagnostics
     manifests/                  Future collection/dataset manifests
   reports/pilot/                Generated audit and manual review worksheet
@@ -86,11 +94,25 @@ The default inputs are the preserved baseline CSVs. Outputs:
 
 The audit checks schema, duplicate IDs/URLs, missing fields, numerical integrity, category counts, and consistency between the two exports. It does not fetch source pages or establish source correctness, training eligibility, or model reliability.
 
-The user has confirmed the ten original records are accurate. The extended schema has been checked on those ten listing pages in a separate validation batch. Make/model/variant are source-normalized, with canonical catalogue review pending. The varied collection controls are ready; the next batch awaits user execution. For a new batch, use a separate report directory:
+The user has confirmed the ten original records are accurate. The extended schema was checked on those ten listing pages in a separate validation batch. The user then collected 200 records in `pilot_batch_001`, reaching all 180 assigned complete matches. Its offline quality review and initial preparation are complete. For a new batch, use a separate report directory:
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.audit_data --raw data/raw/current/pakwheels_raw.csv --clean data/raw/current/pakwheels_clean.csv --output-dir reports/pilot/current_batch
 ```
+
+## Current prepared dataset
+
+Version `pilot_batch_001_v2` contains 200 normalized observations, 137 candidates from four families in model years 2010–2026, and 72 candidates whose cached visible asking price agrees with their URL-matched structured offer. Sixty-five other candidates remain pending price verification. Source agreement does not validate a seller's claims or a sale price.
+
+Cached evidence identified a recommended-car price contaminating one Civic's extraction and an unsupported PHEV fuel label. Both parser issues were fixed; evidenced repairs are recorded in derived files, with raw data preserved. See [the review](docs/pilot-data-review.md) and [generated quality report](reports/pilot/pilot_batch_001/data_quality.md).
+
+Preparation reads saved files only. The default output already exists, so use a new directory to reproduce it:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.prepare_dataset --output-dir data/processed/pilot_batch_001_v3 --report-dir reports/pilot/pilot_batch_001_v3
+```
+
+The observed-label catalogue preserves trims. Registration semantics remain unknown and registration features are deferred. F0–F2 are proposed comparison sets; no model, fitted preprocessing, split, or prediction support has been finalized.
 
 ## Verify offline behavior
 
@@ -99,7 +121,7 @@ The user has confirmed the ten original records are accurate. The extended schem
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Twenty-five behavioral tests pass. The two existing parser self-tests passed during the previous step; they were not rerun as a scraper command during this user-operated handoff.
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Thirty-six behavioral tests and both existing parser self-tests passed during the quality-review step, with HTTP requests blocked. No live collector was launched.
 
 Reproduce new-field extraction from cached pages without network access:
 
@@ -117,7 +139,7 @@ $researchContact = Read-Host "Enter your collector contact email"
 .\.venv\Scripts\python.exe scraper.py --sampling-plan configs/collection_pilot.json --output-dir data/raw/pilot_batch_001 --delay 5 --contact $researchContact
 ```
 
-This targets 40 Corolla, 40 City, 40 Civic, 40 Alto, and 20 general-discovery listings. Maximum budgets are 250 detail attempts and 25 search pages. Actual results can fall short and will be reported.
+This targets 40 Corolla, 40 City, 40 Civic, 40 Alto, and 20 general-discovery listings. Maximum budgets are 250 detail attempts and 25 search pages. This batch has already met its quotas; rerunning it without refresh does not expand the modeling dataset. A deeper scoped collection needs a new configuration and batch directory.
 
 ## Small manual sample
 

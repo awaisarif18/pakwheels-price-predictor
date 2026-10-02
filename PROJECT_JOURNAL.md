@@ -25,11 +25,12 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 2 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling and persistence fix implemented; user-operated pilot finished | Twenty-eight offline tests pass; latest live run completed with all requested group quotas |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Thirty-six offline tests and both original parser self-tests pass with HTTP blocked |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
-| Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Batch summary and manifest inspected; detailed quality review remains pending |
-| Extraction correctness audit | Original ten records confirmed by user; added fields checked on ten source pages in J009 | Canonical identity and broader batch quality review remain pending |
-| Make/model/variant normalization | Source-normalized identity extracted on ten pages | Canonical catalogue review remains pending; unresolved identities are explicit |
+| Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
+| Extraction correctness audit | 108 cached pages checked; 640 of 642 structured comparisons agree; two evidenced corrections | Snapshot agreement only; uncached observations and seller truth are not certified |
+| Make/model/variant normalization | Four-family catalogue preserves 57 observed variant labels | Case/whitespace normalization; no fuzzy trim merges or prediction support declaration |
+| Dataset preparation | Version 2 exports all observations, candidates, and source-checked candidates | Raw files preserved; fixed splits and fitted preprocessing remain pending |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
 | Feature selection | Candidate feature sets planned | No feature comparison has run |
 | Algorithm selection | Pending experiments | Baseline, Ridge, Random Forest, and CatBoost are pilot candidates |
@@ -38,7 +39,7 @@ Update this file as part of future project work; its creation does not establish
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: audit the completed `pilot_batch_001` offline, measure coverage and missingness by family/year/city, review identities, and establish preprocessing rules. The collection quotas are fulfilled; another collection run is not required to begin that review. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md).
+Next work: continue M2 with fixed group-aware splits and shared feature construction, then run an exploratory M3 comparison on the source-checked subset. Prepare a deeper scoped modeling collection from the measured variant/year/city gaps before declaring reliable demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the preparation contract](docs/pilot-data-review.md).
 
 ## 3. The project story so far
 
@@ -220,6 +221,35 @@ Decision: this fulfills the collection size and family-quota requirements for th
 
 Artifacts: private batch summary, manifest, run logs, CSVs, and saved HTML under `data/raw/pilot_batch_001/`.
 
+### J013: cached evidence exposes extraction errors and establishes the first candidate dataset
+
+Date: 2 October 2026. Stage: M1 quality review and initial M2 preparation. Status: offline review/preparation complete; splits and experiments pending.
+
+Goal: establish trustworthy field meanings, a practical first scope, and repeatable preparation before training or another collection run.
+
+Starting point: the user's completed `pilot_batch_001` contains 200 unique listing IDs and 199 parser-complete rows. The raw/clean exports passed integrity and export-consistency checks. Actual four-family membership is 170 records, including off-target search results saved under other assignments.
+
+Evidence review: verified checksums for 108 cached pages and compared six core fields against 107 uniquely URL-matched structured products. Of 642 comparisons, 640 matched and two differed. This measures stored/source snapshot agreement in the retained sample, not seller truth or general parser accuracy.
+
+Problems and repairs: Civic ID 11874852 had stored PKR 3,095,000 from a recommended car. Its own visible price and matching structured offer both show PKR 4,850,000. Main-price selection now takes precedence; recommendation cards are removed from fallback text; Call for price remains missing. Haval H6 ID 12033889 had missing fuel despite an explicit PHEV value; PHEV is now parsed. Both evidenced values were repaired only in derived copies. An uncached Chery with missing fuel remains unchanged. Prado ID 12075118 remains without a target because the source says Call for price.
+
+Implementation: added separate identity, evidence, quality, and reporting modules with a thin offline preparation command. The observed-label catalogue has four families and 57 preserved variant labels. Case/whitespace normalization does not collapse distinct trims. N/A body-type values become missing, zero mileage remains valid, and every exclusion has a reason. Possible-repost grouping excludes price and retains all rows; no multi-record clusters were found under this conservative rule.
+
+Measured results: the candidate scope of Corolla, City, Civic, and Alto in years 2010–2026 produces 137 records: 37/36/30/34 by family respectively. Their cached-price-checked subset contains 72 records: 18/16/18/20. Sixty-five other candidates remain pending price verification. Sixty-three observations are excluded overall; overlapping reasons are year outside scope (40), family outside scope (30), and missing price (1). All 200 remain in the normalized export.
+
+Missingness and coverage: normalized observations have five missing body types after recognizing source placeholders. Candidates have one missing body type and one unspecified variant; the 72 source-checked candidates have populated F0–F2 fields. Registration year is available for 40/137 candidates, with unknown meaning, so registration-gap features are deferred. All observed listing dates mean updated, not originally posted. There are 42 candidate family/variant combinations, of which 31 have three or fewer observations, and 17 cities, of which 12 have three or fewer observations. These counts do not support a broad reliability claim.
+
+Development correction: an added test caught generic placeholder handling erasing the meaningful registration metadata `unknown`. Fixed normalization to apply missing-category rules only to feature categories. Marked intermediate `pilot_batch_001_v1` superseded; `pilot_batch_001_v2` is the final prepared dataset.
+
+Verification: the three new parser regressions failed before the extraction fix and passed afterward. Five preparation tests cover raw-copy preservation, zero/placeholder/metadata semantics, trim distinctions, evidence-only repairs, scope, possible-repost grouping, and checksum rejection. All 36 behavioral tests and both original synthetic parser self-tests passed with HTTP requests blocked. Input hashes remained unchanged:
+
+- Raw: `963ee57aa0ef61c1dac06566f393294f275a73d1bcd198f4af17c87a9e720dbc`.
+- Clean: `6f6a3ad2627b6daf53b4ac635698eae54d8d90755306dd6b8de82d132947accc`.
+
+Artifacts: `data/processed/pilot_batch_001_v2/` contains all normalized rows, candidates, source-checked candidates, and a manifest with input/output/code/configuration fingerprints. `reports/pilot/pilot_batch_001/` contains the quality report, family/year/city coverage tables, and evidence comparisons. [The tracked review](docs/pilot-data-review.md) records the contract and reproduction command.
+
+Outcome and next work: extraction fixes and deterministic preparation are complete. F0–F2 remain comparison candidates; no fitted preprocessing, split, trained model, or model score exists. Continue M2 split/feature work and exploratory M3 comparison, then deepen collection within the measured scope before finalizing a demo. No live collection, dependency installation, or production infrastructure work occurred during this step.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -230,17 +260,20 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H002 | Generic skipped-row messages hid extraction causes | Historical handbook account | Preserve incomplete rows, missing fields, and debug evidence | Mechanism present; fresh verification pending |
 | H003 | Alphabetical URL sorting could skew the selected sample | Historical handbook account and ordered-discovery implementation | Preserve source discovery order with ordered deduplication | Mechanism present; sample representativeness still needs review |
 | H004 | Production infrastructure appeared too early in the execution plan | User clarification in this conversation | Introduce a separate data/modeling pilot and defer production work | Planning correction completed |
-| H005 | Parser completeness does not establish training suitability | Current completeness rule checks only four fields | Accept baseline accuracy confirmation; define identity and training eligibility rules; review new batches | Baseline accuracy confirmed by user; training suitability open |
-| H006 | Titles contain model and variant details without canonical columns | Original CSV schema and source headings | URL-matched family and provisional variant extraction added in J009; reviewed catalogue still needed | Partly implemented; canonical review open |
+| H005 | Parser completeness does not establish training suitability | Current completeness rule checks only four fields | Define explicit candidate scope, source agreement, and exclusions; J013 | Preparation implemented; reliable demo support remains unmeasured |
+| H006 | Titles contain model and variant details without canonical columns | Original CSV schema and source headings | URL-matched extraction and four-family observed-label catalogue; J009/J013 | Candidate identities implemented; broader catalogue remains open |
 | H007 | Missing engine displacement needs context for EVs | Three electric listings show Battery Capacity instead of Engine Capacity in inspected tables | Preserve empty displacement rather than inventing zero | Source context confirmed on three pages in J009; general applicability policy pending |
-| H008 | Repeated runs counted saved/duplicate URLs against new collection limits | Original scraper control flow | Added controlled family searches, detail-attempt budgets, resume skips, and explicit request/row accounting in J010 | Implemented; offline recovery/budget tests pass; live pilot awaits user |
+| H008 | Repeated runs counted saved/duplicate URLs against new collection limits | Original scraper control flow | Added controlled family searches, detail-attempt budgets, resume skips, and explicit request/row accounting in J010 | Implemented; offline tests pass and user-run pilot completed |
 | H009 | Ten varied records cannot establish broad model reliability | Current sample size and lack of training results | Collect deeply within a limited, reviewed scope and evaluate held-out groups | Open |
-| H010 | More data could multiply parser errors before they are discovered | Risk identified during planning | Audit early batches and resolve systematic errors before expanding | Prevention planned |
+| H010 | More data could multiply parser errors before they are discovered | J013 found a recommendation price and missing PHEV fuel | Fixed both demonstrated extraction issues before deeper collection | First-batch review completed; continue source checks on future batches |
 | H011 | Ignore patterns hid project records and misspelled output filenames | Workspace inspection during J006 | Replace them with explicit private-data patterns and retain trackable documentation | Fixed in working tree |
 | H012 | Recommended cars also appear in structured data | Initial live-page inspection in J009 | Match structured product offer URL to the current listing; reject conflicts | Fixed; contamination tests pass |
 | H013 | A displayed listing date could be mistaken for posting date | All ten inspected labels say Last Updated | Store `listing_date_type=updated`; keep collection time separate | Semantic mapping fixed; later evaluation must respect it |
 | H014 | Source assembly values need quality review | Two e-tron listings report Imported and Local | Preserve both facts; examine model/assembly patterns during broader pilot | Open |
 | H015 | Windows denied replacement of a run log | User-run WinError 5; native file-lock regression reproduces it | Bounded retries for permission/sharing denials in JSON and CSV replacement; J011 | Offline fix verified; resumed user run completed in J012 |
+| H016 | Price fallback read a recommended car's price | Cached Civic 11874852: stored 3,095,000 versus own visible/structured 4,850,000 PKR | Prefer main price box, isolate fallback text, preserve Call for price; repair derived copy; J013 | Fixed; three parser regressions pass |
+| H017 | Fuel pattern omitted PHEV | Cached Haval 12033889 explicitly identifies PHEV | Extend fuel parsing; repair only evidence-backed copy; J013 | Fixed; uncached missing fuel remains unresolved |
+| H018 | Generic placeholder handling erased meaningful unknown registration semantics | Preparation regression failed during development | Restrict category missingness rules; supersede v1 with v2; J013 | Fixed; metadata preservation test passes |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -253,16 +286,19 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D003 | Reuse the current scraper and change it incrementally | Existing collection logic works; the next changes should solve demonstrated needs | Accepted pilot approach |
 | D004 | Use separate car and motorcycle predictors | Different identities, schemas, and price distributions | Planned implementation; evaluate each independently |
 | D005 | Compare a median baseline, Ridge, Random Forest, and CatBoost | Test several useful modeling approaches with manageable experimental cost | Candidate list; no winner selected |
-| D006 | Preserve variants, raw observations, and exclusion reasons | Avoid hidden identity loss and make preparation reproducible | Planned implementation |
+| D006 | Preserve variants, raw observations, and exclusion reasons | Avoid hidden identity loss and make preparation reproducible | Implemented in J013; continue preserving versions |
 | D007 | Keep preprocessing reusable between training and prediction | Prevent a demo from interpreting inputs differently from the trained model | Planned implementation |
 | D008 | Build a local saved-predictor demo before large training | Verify the complete workflow at modest cost | Planned; CLI then a small local UI |
 | D009 | Reassess framework and infrastructure after pilot results | Actual workflows, latency, memory, and durability needs remain unknown | Deferred; production handover milestone |
-| D010 | Add assembly, body type, registration year, and listing date | User-selected scope; explicit date semantics and unknown values are retained | Implemented and validated on ten pages in J009; broader pilot pending |
+| D010 | Add assembly, body type, registration year, and listing date | User-selected scope; explicit date semantics and unknown values are retained | Implemented in J009; broader missingness/semantics reviewed in J013 |
 | D011 | Exclude registration location, colour, and subjective seller condition claims | User does not want these additions; condition language is unreliable | Accepted pilot scope; listing city remains |
 | D012 | Retain explicit factual registration statements with unknown meaning when needed | Registration year was present as factual text on nine sample pages | Implemented; no full-description storage or subjective condition features |
 | D013 | Treat observed Last Updated dates as freshness metadata | Date labels do not establish original posting time | Implemented; use grouped collection batches for later chronological evaluation |
 | D014 | The user runs every live collection command | Explicit user instruction during J010 | Persistent workflow in AGENTS.md; agent prepares commands and waits for completion |
-| D015 | Use four family quotas plus general discovery for the first field pilot | Reduce dependence on one general-results page while retaining some broader examples | Target 180 complete matches, not yet collected; actual scope reviewed after results |
+| D015 | Use four family quotas plus general discovery for the first field pilot | Reduce dependence on one general-results page while retaining some broader examples | All 180 assigned complete matches obtained in J012; quality review in J013 |
+| D016 | Prepare four-family candidates in years 2010–2026, retaining all observed cities | Narrow older sparse generations and keep enough observations for initial experiments | Provisional preparation scope in J013; predictor support remains empty |
+| D017 | Separate price-checked candidates from other candidates | A demonstrated main-price error warrants conservative initial experiments | 72 source-checked and 65 other candidates in J013; expand evidence before reliability claims |
+| D018 | Defer registration timing features | Only 40/137 candidates contain registration year and its meaning is unknown | Keep the fact/provenance; reassess only with interpretable evidence and validation |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -316,7 +352,7 @@ The handbook records a different checksum for its recovered original scraper. By
 |---|---|---|---|---:|---|---|
 | Legacy sample S001 | 1 October 2026 | Car listings in current CSVs | Not available | 10 | Not measured | User-reported collection; current files inspected |
 | field_validation_2026-10-01 | 1 October 2026 | Same ten car listing IDs, extended attributes | 10 successful detail requests; 4 initial inspection and 6 manifest-recorded | 10 refreshed observations; 0 new listing IDs | Not measured | Cached HTML checksums, batch manifest, integrity audit, J009 |
-| pilot_batch_001 | 1-2 October 2026 | Four family quotas plus general discovery | Latest run: 5 search and 114 detail requests, all successful; earlier failed run retained | 200 cumulative rows; 199 complete; 180 complete quota matches | Not measured | Summary and manifest agree; J012; detailed quality review pending |
+| pilot_batch_001 | 1-2 October 2026 | Four family quotas plus general discovery | Latest run: 5 search and 114 detail requests, all successful; earlier failed run retained | 200 cumulative rows; 199 complete; 180 complete quota matches | 137 candidate groups; 72 source-checked groups under conservative exact-specification rule | J012 collection accounting; J013 cached evidence and derived dataset v2 |
 
 For future batches add discovery/detail request counts, duplicates, access stops, ordinary failures, incomplete rows, exclusion counts, review sample size, actual discrepancies, elapsed time, and dataset checksum. Distinguish newly added rows from cumulative totals.
 
@@ -339,6 +375,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - Six behavioral tests and both existing parser self-tests pass in the current environment.
 - J009 extends verification to fifteen behavioral tests and a separate ten-page new-field sample. Registration year is present on nine pages; other agreed fields are present on all ten. These remain extraction results, not model scores.
 - J010 extends offline coverage to twenty-five behavioral tests and prepares bounded family sampling with auditable outputs. The user-operated collection pilot is awaiting execution; its quotas are not results.
+- J012 records completion of all field-pilot quotas. J013 reviews cached evidence, fixes two extraction issues, and exports versioned candidate datasets; thirty-six behavioral tests and both parser self-tests pass offline.
 - A local prediction demo, trained model, measured regression result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -346,7 +383,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J013: <specific event or milestone>
+### J014: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

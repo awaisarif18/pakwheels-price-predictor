@@ -19,6 +19,32 @@ def listing_html(details="", comments="", title="Toyota Corolla GLi Automatic 1.
 
 
 class CollectionFieldsTests(unittest.TestCase):
+    def test_main_price_box_wins_over_recommendation_prices(self):
+        html = (
+            '<html><body><h1>Honda Civic 1.8 i-VTEC CVT 2019</h1>'
+            '<ul><li class="similar-ads"><div>PKR 3,095,000</div></li></ul>'
+            '<div>2019 | 35,000 km | Petrol | Automatic</div>'
+            '<div class="price-box"><strong>PKR 48.5 <span>lacs</span></strong></div>'
+            '</body></html>'
+        )
+        row, _ = scraper.parse_car(html, URL)
+        self.assertEqual(row["price_pkr"], 4_850_000)
+
+    def test_call_for_price_is_not_replaced_with_another_cars_price(self):
+        html = (
+            '<html><body><h1>Toyota Prado TX 2020</h1><div>2020 | 35,000 km | Petrol | Automatic</div>'
+            '<div>PKR 3,600,000</div><div class="price-box"><strong>Call for price</strong></div>'
+            '</body></html>'
+        )
+        row, _ = scraper.parse_car(html, URL)
+        self.assertIsNone(row["price_pkr"])
+        self.assertEqual(row["parse_status"], "incomplete")
+
+    def test_phev_is_collected_without_relabeling_it_as_petrol(self):
+        html = '<html><body><h1>Haval H6 PHEV 2025</h1><div>PKR 1.26 crore | 15,690 km | PHEV | Automatic</div></body></html>'
+        row, _ = scraper.parse_car(html, URL)
+        self.assertEqual(row["fuel"], "PHEV")
+
     def test_labeled_fields_identity_and_updated_date(self):
         html = listing_html(
             '<li class="ad-data">Assembly</li><li>Local</li>'

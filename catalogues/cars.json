@@ -1,0 +1,45 @@
+{
+  "catalogue_version": 1,
+  "status": "observed_source_labels_only_not_a_complete_market_catalogue",
+  "policy": "Resolve whitespace and case only. Preserve generation, engine, transmission, interior, and upgraded-trim wording. Unspecified is not base trim. This catalogue declares no prediction support.",
+  "families": [
+    {
+      "make": "Toyota",
+      "model": "Corolla",
+      "variants": [
+        "Altis 1.6 X CVT-i Special Edition", "Altis Automatic 1.6", "Altis CVT-i 1.8",
+        "Altis Cruisetronic 1.8", "Altis Grande CVT-i 1.8",
+        "Altis Grande X CVT-i 1.8 Beige Interior", "Altis Grande X CVT-i 1.8 Black Interior",
+        "Altis X Automatic 1.6", "Altis X Manual 1.6", "GLi 1.3", "GLi 1.3 VVTi",
+        "GLi Automatic 1.3 VVTi", "GLi Automatic 1.6 VVTi", "XE", "XLi", "XLi Automatic", "XLi VVTi"
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "City",
+      "variants": [
+        "1.2L CVT", "1.2L M/T", "1.3 i-VTEC", "1.3 i-VTEC Prosmatec", "1.5 i-VTEC",
+        "1.5L Aspire CVT", "1.5L Aspire S CVT", "Aspire 1.3 i-VTEC", "Aspire 1.5 i-VTEC",
+        "Aspire Prosmatec 1.3 i-VTEC", "Aspire Prosmatec 1.5 i-VTEC", "EXi S Automatic", "i-DSI", "i-DSI Vario"
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "Civic",
+      "variants": [
+        "1.5 RS Turbo", "1.8 i-VTEC CVT", "EX", "EXi", "EXi Prosmatec", "Oriel",
+        "Oriel 1.8 i-VTEC CVT", "Oriel Prosmatec UG", "RS", "Turbo 1.5 VTEC CVT",
+        "VTi 1.6", "VTi Oriel 1.6", "VTi Oriel Prosmatec 1.6", "VTi Oriel Prosmatec 1.8 i-VTEC",
+        "VTi Prosmatec 1.6", "VTi Prosmatec 1.8 i-VTEC"
+      ]
+    },
+    {
+      "make": "Suzuki",
+      "model": "Alto",
+      "variants": [
+        "ECO-L", "GII", "VXL AGS", "VXL AGS Upgraded", "VXR", "VXR (CNG)",
+        "VXR AGS", "VXR AGS Upgraded", "VXR Upgraded", "Works Edition"
+      ]
+    }
+  ]
+}

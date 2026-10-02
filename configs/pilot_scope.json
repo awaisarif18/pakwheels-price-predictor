@@ -1,9 +1,18 @@
 {
-  "version": 1,
-  "status": "draft",
+  "version": 2,
+  "status": "candidate_modeling_scope_no_prediction_support_declared",
   "vehicle_type": "car",
   "supported_models": [],
-  "year_range": null,
+  "candidate_families": [
+    {"make": "Toyota", "model": "Corolla"},
+    {"make": "Honda", "model": "City"},
+    {"make": "Honda", "model": "Civic"},
+    {"make": "Suzuki", "model": "Alto"}
+  ],
+  "year_range": [2010, 2026],
   "cities": [],
-  "note": "No prediction support is declared. Set scope after the initial source and identity audit."
+  "city_policy": "Retain observed cities in candidate preparation; evaluate rare and unseen cities later. No supported prediction-city list is declared.",
+  "registration_policy": "Optional raw fact. Unknown registration meaning cannot produce a physical-usage claim or a validated registration-gap feature.",
+  "training_policy": "Use the separately exported source-checked subset for initial exploratory benchmarks. Other candidates remain pending price verification. Fit imputers, encoders, scalers, and rare-category rules inside training folds only.",
+  "note": "Four observed families and 2010-2026 form the candidate collection/modeling scope. These bounds narrow old and sparse-generation tails; they do not assert market-wide reliability. supported_models remains empty until a trained model and evaluated support contract exist."
 }

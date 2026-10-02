@@ -10,6 +10,7 @@ incomplete rows in pakwheels_raw.csv and complete rows in pakwheels_clean.csv.
 """
 
 import argparse
+import json
 import math
 import re
 import sys
@@ -48,7 +49,7 @@ PRICE_PATTERN = re.compile(
     r"(crores?|cr|lakhs?|lacs?|millions?|mn)?\b", re.I
 )
 MILEAGE_PATTERN = re.compile(r"\b([\d,]+)\s*(?:kilometres|kilometers|kms?|KM)\b", re.I)
-FUEL_PATTERN = re.compile(r"\b(Petrol|Diesel|Hybrid|CNG|Electric|LPG)\b", re.I)
+FUEL_PATTERN = re.compile(r"\b(PHEV|Petrol|Diesel|Hybrid|CNG|Electric|LPG)\b", re.I)
 TRANSMISSION_PATTERN = re.compile(r"\b(Automatic|Manual|CVT)\b", re.I)
 ENGINE_PATTERN = re.compile(r"\b(\d{2,5})\s*cc\b", re.I)
 
@@ -108,9 +109,11 @@ def parse_car(html, url):
     title = normalize_text(heading.get_text(" ", strip=True)) if heading else ""
     title_years = YEAR_PATTERN.findall(title)
     optional = extract_fields(soup, url, title, int(title_years[-1]) if title_years else None)
+    price_node = soup.select_one(".price-well .price-box > strong") or soup.select_one(".price-box > strong")
+    displayed_price = normalize_text(price_node.get_text(" ", strip=True)) if price_node else None
 
     # Exclude invisible scripts/styles; retain document order of visible text.
-    for node in soup.select("script, style, noscript, svg"):
+    for node in soup.select("script, style, noscript, svg, .similar-ads, .cards"):
         node.decompose()
     body = soup.body or soup
     page_text = normalize_text(body.get_text(" ", strip=True))
@@ -125,16 +128,24 @@ def parse_car(html, url):
 
     # The prominent price normally occurs shortly after the h1, e.g. PKR 4,300,000.
     # Some pages instead show "Current Price PKR 43 lacs" lower down.
-    price_match = PRICE_PATTERN.search(primary[:3500])
-    if not price_match:
+    price_source = "main_price_box" if displayed_price is not None else "scoped_listing_text"
+    price_match = PRICE_PATTERN.search(displayed_price) if displayed_price is not None else None
+    if displayed_price is None:
         price_match = re.search(
             r"Current\s+Price\s*:?[\s\S]{0,100}?" + PRICE_PATTERN.pattern,
             primary, re.I
         )
+        if price_match:
+            price_source = "explicit_current_price"
+        else:
+            price_match = PRICE_PATTERN.search(primary[:3500])
     price = numeric_price(price_match.group(1), price_match.group(2)) if price_match else None
     # An unconverted decimal without a unit is not a valid total PKR asking price.
     if price is not None and price < 10_000:
         price = None
+    provenance = json.loads(optional["field_provenance"])
+    provenance["price_pkr"] = {"source": price_source, "displayed": displayed_price or (price_match.group(0) if price_match else None)}
+    optional["field_provenance"] = json.dumps(provenance, sort_keys=True, ensure_ascii=False)
 
     years = YEAR_PATTERN.findall(title)
     if not years:
@@ -171,7 +182,7 @@ def parse_car(html, url):
         "year": year,
         "price_pkr": price,
         "mileage_km": mileage,
-        "fuel": fuel_match.group(1).title() if fuel_match else None,
+        "fuel": (fuel_match.group(1).upper() if fuel_match.group(1).upper() in {"CNG", "LPG", "PHEV"} else fuel_match.group(1).title()) if fuel_match else None,
         "transmission": transmission_match.group(1).title() if transmission_match else None,
         "engine_cc": int(engine_match.group(1)) if engine_match else None,
         "listing_city": city_match.group(1).replace("-", " ").title() if city_match else None,
