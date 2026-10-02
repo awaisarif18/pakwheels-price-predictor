@@ -25,21 +25,22 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 2 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Thirty-six offline tests and both original parser self-tests pass with HTTP blocked |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Forty-five offline tests pass with HTTP blocked; original parser self-tests passed in J013 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
 | Extraction correctness audit | 108 cached pages checked; 640 of 642 structured comparisons agree; two evidenced corrections | Snapshot agreement only; uncached observations and seller truth are not certified |
 | Make/model/variant normalization | Four-family catalogue preserves 57 observed variant labels | Case/whitespace normalization; no fuzzy trim merges or prediction support declaration |
-| Dataset preparation | Version 2 exports all observations, candidates, and source-checked candidates | Raw files preserved; fixed splits and fitted preprocessing remain pending |
+| Dataset preparation | Version 2 exports all observations, candidates, and source-checked candidates | Fixed evaluation membership saved in J014; raw/prepared files preserved |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
-| Feature selection | Candidate feature sets planned | No feature comparison has run |
+| Feature selection | Shared F0–F2 input contract implemented | Identical training/prediction rules; no fitted preprocessing or feature comparison yet |
+| Evaluation membership | 57 development records, three 19-record folds, 15 reserved test records | Split ID `pilot_eval_6988c20705512365`; target-independent, family-stratified, group-aware |
 | Algorithm selection | Pending experiments | Baseline, Ridge, Random Forest, and CatBoost are pilot candidates |
 | Model training and evaluation | Not run in this session | No trained predictor or measured model score is claimed |
 | Local demo | Planned | Follows the data/modeling pilot |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: continue M2 with fixed group-aware splits and shared feature construction, then run an exploratory M3 comparison on the source-checked subset. Prepare a deeper scoped modeling collection from the measured variant/year/city gaps before declaring reliable demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the preparation contract](docs/pilot-data-review.md).
+Next work: begin exploratory M3 comparisons with a training-only comparable median, followed by Ridge, Random Forest, and CatBoost on the saved development folds. Fit preprocessing within each training fold and keep the reserved test closed during selection. Prepare deeper modeling collection before claiming reliable demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the evaluation contract](docs/pilot-evaluation-contract.md).
 
 ## 3. The project story so far
 
@@ -250,6 +251,30 @@ Artifacts: `data/processed/pilot_batch_001_v2/` contains all normalized rows, ca
 
 Outcome and next work: extraction fixes and deterministic preparation are complete. F0–F2 remain comparison candidates; no fitted preprocessing, split, trained model, or model score exists. Continue M2 split/feature work and exploratory M3 comparison, then deepen collection within the measured scope before finalizing a demo. No live collection, dependency installation, or production infrastructure work occurred during this step.
 
+### J014: shared feature preparation and frozen exploratory evaluation membership
+
+Date: 2 October 2026. Stage: M2 feature/evaluation preparation. Status: completed; M3 comparison not run.
+
+Goal: make training and future prediction interpret inputs identically and give every algorithm/feature comparison the same independent evaluation membership.
+
+Starting point: `pilot_batch_001_v2` has 72 source-checked candidates. The remaining 65 candidates lack cached asking-price verification. No previous fitted preprocessing or split existed.
+
+Implementation: `pilot/features.py` resolves identities, validates integral year/mileage/displacement, preserves zero mileage and trims, normalizes category labels, and selects only ordered F0/F1/F2 fields. The fixed `__MISSING__` token represents unspecified optional categories; numerical missingness remains `None`. Target validation is separate from prediction preparation. Registration/date/ID/provenance/group metadata do not enter model inputs. No fitted transformation was created.
+
+Split decision: `configs/evaluation_pilot.json` fixes seed 42, a 20% group quota by family, and three development folds. `pilot/splits.py` ranks groups with SHA-256 using seed/phase/group ID. It reserves the nearest whole-number test quota per family, then balances development folds using family/global row counts. Targets and input order cannot affect assignments. Possible reposts remain together. Insufficient family groups, duplicates, cross-family groups, omissions, and leakage cause errors rather than an implicit fallback.
+
+Measured membership: 57 development records and 15 reserved demo-test records, about 20.8% of the 72-record population. Each development fold contains 19 records, leaving 38 to train on each run. Corolla has 14 development/4 test records, City 13/3, Civic 14/4, and Alto 16/4. Every family appears in every validation fold. All 72 group IDs are distinct under the current conservative grouping rule; that does not prove independent vehicles.
+
+Reproducibility: saved `pilot_eval_6988c20705512365` in `data/processed/pilot_batch_001_eval_v1/`. Its manifest binds exact population bytes, preparation manifest, feature contract, configuration, and implementation hashes. The artifact freezes the catalogue and scope, records split assignments and count-based reports, and refuses overwrite. `pilot/evaluate.py` loads aligned inputs, targets, IDs, groups, and fold IDs. It defaults to development data and checks artifact/data checksums, group isolation, and feature implementation versions.
+
+Verification: added four feature tests and five split/artifact tests. The 45-test suite passed with HTTP blocked. Tests cover training/prediction agreement, target separation, zero/optional values, invalid numbers/identities, unchanged assignments after reordering or changing targets, possible-repost isolation, invalid split rejection, reproducible artifact round trips, overwrite refusal, and tampered-file rejection. Real F0/F1/F2 loaders return the same 57 development IDs, targets, and folds. Input CSVs and the preparation manifest remain unchanged.
+
+Limits: the reserved test has only three or four records per family. Only family is stratified, so variant/year/city coverage remains sparse. Snapshot auditing and eligibility checks accessed source values, but no test prediction or score has been computed. The test is unopened for model outcomes. Future comparison commands must use development data; if test results guide tuning, retire its untouched status and obtain new independent evaluation data.
+
+Artifacts: [evaluation contract](docs/pilot-evaluation-contract.md), fixed configuration, shared feature/split/load modules, thin `scripts/prepare_evaluation.py`, and private evaluation manifest/report. No live collection, model training, dependency installation, or production infrastructure work occurred.
+
+Next step: begin exploratory M3 comparisons using the saved folds. Fit each candidate's imputation/encoding/scaling and baseline medians on its training fold only. Report PKR errors and subgroup counts before deciding what the deeper collection should address.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -274,6 +299,7 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H016 | Price fallback read a recommended car's price | Cached Civic 11874852: stored 3,095,000 versus own visible/structured 4,850,000 PKR | Prefer main price box, isolate fallback text, preserve Call for price; repair derived copy; J013 | Fixed; three parser regressions pass |
 | H017 | Fuel pattern omitted PHEV | Cached Haval 12033889 explicitly identifies PHEV | Extend fuel parsing; repair only evidence-backed copy; J013 | Fixed; uncached missing fuel remains unresolved |
 | H018 | Generic placeholder handling erased meaningful unknown registration semantics | Preparation regression failed during development | Restrict category missingness rules; supersede v1 with v2; J013 | Fixed; metadata preservation test passes |
+| H019 | Checked population is too small for stable family-level evaluation | J014 leaves only 3–4 reserved test groups per family and 38 training records per fold | Treat comparisons as exploratory, report counts, and deepen coverage before demo claims | Open; fixed splits do not solve the sample-size limit |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -299,6 +325,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D016 | Prepare four-family candidates in years 2010–2026, retaining all observed cities | Narrow older sparse generations and keep enough observations for initial experiments | Provisional preparation scope in J013; predictor support remains empty |
 | D017 | Separate price-checked candidates from other candidates | A demonstrated main-price error warrants conservative initial experiments | 72 source-checked and 65 other candidates in J013; expand evidence before reliability claims |
 | D018 | Defer registration timing features | Only 40/137 candidates contain registration year and its meaning is unknown | Keep the fact/provenance; reassess only with interpretable evidence and validation |
+| D019 | Freeze family-stratified group splits with seed 42 before modeling | Every algorithm/feature set needs identical membership without target-driven allocation | Implemented in J014; 57 development/15 test; retire untouched status if test guides tuning |
+| D020 | Share unfitted feature rules and explicit missing conventions across training/prediction | Avoid input drift, silent trim substitutions, and price/metadata leakage | Implemented in J014; fitted preprocessing remains inside future training folds |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -376,6 +404,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J009 extends verification to fifteen behavioral tests and a separate ten-page new-field sample. Registration year is present on nine pages; other agreed fields are present on all ten. These remain extraction results, not model scores.
 - J010 extends offline coverage to twenty-five behavioral tests and prepares bounded family sampling with auditable outputs. The user-operated collection pilot is awaiting execution; its quotas are not results.
 - J012 records completion of all field-pilot quotas. J013 reviews cached evidence, fixes two extraction issues, and exports versioned candidate datasets; thirty-six behavioral tests and both parser self-tests pass offline.
+- J014 implements shared F0–F2 preparation and freezes 57 development/15 test records with three 19-record folds. Forty-five behavioral tests pass with HTTP blocked; no model metrics exist.
 - A local prediction demo, trained model, measured regression result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -383,7 +412,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J014: <specific event or milestone>
+### J015: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

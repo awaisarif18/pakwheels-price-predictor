@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "seed": 42,
+  "test_fraction": 0.2,
+  "development_folds": 3,
+  "population": "source_checked_candidates.csv",
+  "stratification": "make/model family",
+  "group_policy": "Keep dataset group_id intact; reject cross-family groups",
+  "allocation": "Seeded SHA-256 group ordering; nearest group-count test quota per family, then family/global row-balanced validation folds",
+  "status": "exploratory_small_sample",
+  "test_status": "reserved_unopened",
+  "note": "No scores have been computed. Small family test counts cannot establish reliable demo support. Never select a seed using model results. Bind assignments to exact dataset bytes; new data requires a new split ID."
+}

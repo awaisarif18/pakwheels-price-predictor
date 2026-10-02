@@ -11,6 +11,7 @@ The current stage is the data and modeling pilot. Reuse the working car collecto
 - [Collection fields and validation findings](docs/collection-field-mapping.md)
 - [Run the field collection pilot](docs/collection-pilot-run.md)
 - [First pilot quality review and preparation rules](docs/pilot-data-review.md)
+- [Shared features and fixed evaluation splits](docs/pilot-evaluation-contract.md)
 
 ## Current structure
 
@@ -32,10 +33,14 @@ pakwheels-price-predictor/
     evidence.py                 Cached source comparisons and repair evidence
     quality.py                  Candidate rules and possible-repost groups
     profile.py                  Coverage and missingness reports
+    features.py                 Shared unfitted training/prediction inputs
+    splits.py                   Deterministic family/group assignments
+    evaluate.py                 Frozen population and development-data loader
   scripts/
     audit_data.py               Audit command entry point
     validate_collection.py      Reparse cached sample or fetch missing evidence
     prepare_dataset.py          Offline versioned preparation command
+    prepare_evaluation.py       Freeze feature contract and evaluation splits
   tests/
     test_audit.py               Data-integrity and review-preservation checks
     test_collection_fields.py   New-field meaning and contamination checks
@@ -43,6 +48,7 @@ pakwheels-price-predictor/
     pilot_scope.json            Four candidate families; no predictor support yet
     collection_schema.json      Version 2 field decision contract
     collection_pilot.json       Four family quotas plus general discovery
+    evaluation_pilot.json       Fixed seed, reserved test, three validation folds
   catalogues/cars.json           Four families and observed variant labels
   docs/
     plans/                      Pilot and future production plans
@@ -55,6 +61,7 @@ pakwheels-price-predictor/
       field_validation_2026-10-01/  Separate enriched ten-listing sample
       pilot_batch_001/           User-collected 200-record field pilot
     processed/pilot_batch_001_v2/  Final normalized/candidate datasets
+    processed/pilot_batch_001_eval_v1/  Frozen contracts and split membership
     debug_pages/                Private HTML/text diagnostics
     manifests/                  Future collection/dataset manifests
   reports/pilot/                Generated audit and manual review worksheet
@@ -112,7 +119,21 @@ Preparation reads saved files only. The default output already exists, so use a 
 .\.venv\Scripts\python.exe -m scripts.prepare_dataset --output-dir data/processed/pilot_batch_001_v3 --report-dir reports/pilot/pilot_batch_001_v3
 ```
 
-The observed-label catalogue preserves trims. Registration semantics remain unknown and registration features are deferred. F0–F2 are proposed comparison sets; no model, fitted preprocessing, split, or prediction support has been finalized.
+The observed-label catalogue preserves trims. Registration semantics remain unknown and registration features are deferred. Shared F0–F2 input rules and fixed splits are implemented. No model, fitted preprocessing, or prediction support has been finalized.
+
+## Fixed exploratory evaluation
+
+The 72 source-checked records now have saved membership: 57 development records and 15 reserved demo-test records. Three validation folds each contain 19 development records; each run trains on the other 38. Every family appears in every fold. F0–F2 share these assignments, and possible repost groups stay together.
+
+The loader verifies dataset/artifact hashes and defaults to development data. The reserved test requires an explicit request and has no model outcomes yet. See [the evaluation contract](docs/pilot-evaluation-contract.md) and [generated split report](data/processed/pilot_batch_001_eval_v1/split_report.md).
+
+To reproduce offline into a new directory:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.prepare_evaluation --output-dir data/processed/pilot_batch_001_eval_v2
+```
+
+Next is exploratory M3 comparison using training-fold-only preprocessing. Three or four test records per family cannot establish a reliable four-family demo.
 
 ## Verify offline behavior
 
@@ -121,7 +142,7 @@ The observed-label catalogue preserves trims. Registration semantics remain unkn
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Thirty-six behavioral tests and both existing parser self-tests passed during the quality-review step, with HTTP requests blocked. No live collector was launched.
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Forty-five behavioral tests pass with HTTP requests blocked. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
 
 Reproduce new-field extraction from cached pages without network access:
 

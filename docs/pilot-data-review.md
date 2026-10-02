@@ -85,6 +85,8 @@ This reads saved files only. No scraping or new dependency is needed. Verificati
 
 ## Next stage
 
+J014 update, 2 October 2026: shared F0–F2 preparation and fixed splits are now implemented. The [evaluation contract](pilot-evaluation-contract.md) records 57 development rows, three 19-row validation folds, and 15 reserved demo-test rows. No model comparison or fitted preprocessing has run. The following describes the sequence established by this review.
+
 Continue M2 by defining fixed group-aware development/evaluation splits and shared feature construction, then begin an explicitly exploratory M3 benchmark on the 72 source-checked candidates. That can test the workflow and reveal errors before a larger run. With only 16–20 checked records per family, it cannot establish a reliable four-family demo.
 
 Use the measured coverage gaps to prepare a deeper scoped modeling collection toward the plan's roughly 500–1,500 usable records. Record source-price checks, variant/year coverage, and batch identity before finalizing demo support. Each live run is handed to the user as an exact PowerShell command; the agent waits for completion. Algorithm choice and fitted preprocessing remain experimental decisions, and production work follows the predictor/demo milestones.

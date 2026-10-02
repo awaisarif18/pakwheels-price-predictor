@@ -12,6 +12,8 @@ J010 update: family sampling and batch accounting are implemented and verified o
 
 ## 1. What we are trying to establish
 
+Implementation update, 2 October 2026: the user-operated field pilot met all quotas. [The offline review](../pilot-data-review.md) records 200 observations, two evidenced extraction fixes, 137 scoped candidates, and 72 source-checked candidates. Shared F0–F2 preparation and fixed group-aware evaluation membership are implemented. [The evaluation contract](../pilot-evaluation-contract.md) records 57 development rows, three 19-row validation folds, and 15 reserved demo-test rows. This completes initial M2 feature/split preparation; M3 comparisons, fitted preprocessing, and reliable demo support remain pending. Results on this population will be exploratory.
+
 Use the working scraper to build a trustworthy small dataset, determine which inputs can be collected reliably, compare suitable regression algorithms, and demonstrate predictions locally. Increase the dataset after the full path works and measured errors tell us what to collect next.
 
 The first deliverable is a reproducible experiment and a usable local demo. FastAPI, PostgreSQL, Docker, hosted storage, and deployment are later decisions. The previously recommended production stack is a future option to reassess using the pilot's actual needs.
