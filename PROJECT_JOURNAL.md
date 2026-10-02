@@ -1,6 +1,6 @@
 # Project journal: Pakistan vehicle price predictor
 
-Created: 1 October 2026. Last updated: 1 October 2026.
+Created: 1 October 2026. Last updated: 2 October 2026.
 
 This is the living record of how the project develops: what we tried, what failed, what changed, the evidence behind decisions, and the results we obtained. Keep it updated after meaningful work sessions so it can support a later project report, portfolio case study, or technical handover.
 
@@ -22,11 +22,12 @@ Update this file as part of future project work; its creation does not establish
 
 ## 2. Current position
 
-| Area | Status as of 1 October 2026 | Evidence or limitation |
+| Area | Status as of 2 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Optional attributes, family sampling, bounded requests, and batch accounting implemented | Twenty-five offline behavioral tests pass; previous ten-page live validation remains evidence for field extraction |
+| Car collector | Sampling and persistence fix implemented; user-operated pilot finished | Twenty-eight offline tests pass; latest live run completed with all requested group quotas |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
+| Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Batch summary and manifest inspected; detailed quality review remains pending |
 | Extraction correctness audit | Original ten records confirmed by user; added fields checked on ten source pages in J009 | Canonical identity and broader batch quality review remain pending |
 | Make/model/variant normalization | Source-normalized identity extracted on ten pages | Canonical catalogue review remains pending; unresolved identities are explicit |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
@@ -37,7 +38,7 @@ Update this file as part of future project work; its creation does not establish
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: the user runs the prepared [collection pilot command](docs/collection-pilot-run.md), then reports completion. The agent will inspect saved results offline, measure missingness by family/year/city, and review identity and assembly quality. Live collection is reserved for the user in [AGENTS.md](AGENTS.md). No new collection batch has been executed in J010.
+Next work: audit the completed `pilot_batch_001` offline, measure coverage and missingness by family/year/city, review identities, and establish preprocessing rules. The collection quotas are fulfilled; another collection run is not required to begin that review. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md).
 
 ## 3. The project story so far
 
@@ -187,6 +188,38 @@ Artifacts: [sampling configuration](configs/collection_pilot.json), [run instruc
 
 Next step: user executes the supplied command into `data/raw/pilot_batch_001/` and reports completion. Then audit saved files and evidence offline, record actual results, and choose the first modeling scope. Further live collection remains a user-run handoff.
 
+### J011: handling Windows access denials when replacing collection logs
+
+Date: 2 October 2026. Stage: M1 collection recovery. Status: offline fix verified; user-operated resume pending.
+
+Reported failure: the user-run collector stopped with `PermissionError: [WinError 5] Access is denied` while replacing `runs/20261001T153413246598Z.json.tmp` with its destination JSON file. The supplied console output reported 86 stored rows and 85 parser-complete rows. These counts are user-reported here; no per-record review was performed for this fix.
+
+Reproduction: a native Windows test held a disposable destination file open with read/write sharing allowed and delete sharing denied. The actual JSON writer failed with the identical WinError 5. Releasing that handle allowed replacement. This reproduces the file-lock mechanism; the process responsible for the user's original denial was not identified. A disposable write probe in the actual batch run directory succeeded, so permanent directory-level denial was not reproduced.
+
+Cause addressed: JSON and CSV writers attempted replacement once and aborted on a transient access denial. Added a shared `collector/persistence.py` replacement helper with six attempts and exponential waits totaling at most 3.1 seconds. Only permission/sharing errors are retried. Persistent denial still raises, preserves the previous destination, and retains the temporary file. HTTP requests are not retried by this change.
+
+Verification: the native Windows regression test failed before the fix and passed afterward. Additional checks verify bounded retries, preservation of existing JSON under persistent denial, and immediate propagation of unrelated filesystem failures. All 28 behavioral tests passed with live HTTP blocked. Tests used disposable files; existing batch artifacts were not rewritten. No live collector was launched.
+
+Limitations: a permanent lock or access policy can outlast the retry window. The fix handles temporary contention and does not certify that every possible Windows access denial is resolved. No antivirus, editor, or other process is asserted to be responsible without evidence.
+
+Next step: the user resumes with the unchanged sampling configuration and `data/raw/pilot_batch_001/`, without `--refresh`. Existing complete rows are skipped; incomplete rows can be retried. Record collection results after the user reports completion.
+
+### J012: confirming that the user-operated field pilot met its collection targets
+
+Date: 2 October 2026. Stage: M1 collection. Status: collection targets fulfilled; data-quality review pending.
+
+Verification scope: read `collection_summary.md`, `manifest.json`, and the latest run's accounting. No individual source-record review, further collection, or training was performed. The summary and manifest agree on counts.
+
+Observed results: `pilot_batch_001` has 200 stored rows and 200 unique listing IDs, with 199 parser-complete rows. Every requested quota was reached: 40 Corolla, 40 City, 40 Civic, 40 Alto, and 20 general-discovery complete matches. Those sum to 180 assigned complete matches. The other 19 complete observations remain outside those matched quotas; one stored observation is incomplete. Listing IDs still do not establish independent vehicle/repost groups.
+
+The latest resumed run completed with no stop reason: 5 search requests, 114 detail requests, 119 successful request outcomes, 114 newly stored rows, zero refreshed rows, and 41 duplicate IDs considered. Its elapsed time was 701.564 seconds. The earlier failed run remains recorded in the manifest rather than being overwritten. The reported Windows replacement error did not stop this resumed run; no retry-occurrence count is available.
+
+Field availability across all 200 raw rows: make/model 199 each, variant 194, model year 200, price 199, mileage 200, fuel 198, transmission 200, engine displacement 200, listing city 200, assembly 200, body type 199, listing date 200, and registration year 62. Registration-year availability is 31%; it must remain optional. Missingness alone does not establish whether the information was absent from the source or expressed in an unsupported format.
+
+Decision: this fulfills the collection size and family-quota requirements for the field pilot. Proceed to offline integrity, identity, coverage, and source-evidence review before deciding modeling eligibility. Further collection is not needed merely to meet the existing quotas. No model reliability claim follows from parser completeness.
+
+Artifacts: private batch summary, manifest, run logs, CSVs, and saved HTML under `data/raw/pilot_batch_001/`.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -207,6 +240,7 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H012 | Recommended cars also appear in structured data | Initial live-page inspection in J009 | Match structured product offer URL to the current listing; reject conflicts | Fixed; contamination tests pass |
 | H013 | A displayed listing date could be mistaken for posting date | All ten inspected labels say Last Updated | Store `listing_date_type=updated`; keep collection time separate | Semantic mapping fixed; later evaluation must respect it |
 | H014 | Source assembly values need quality review | Two e-tron listings report Imported and Local | Preserve both facts; examine model/assembly patterns during broader pilot | Open |
+| H015 | Windows denied replacement of a run log | User-run WinError 5; native file-lock regression reproduces it | Bounded retries for permission/sharing denials in JSON and CSV replacement; J011 | Offline fix verified; resumed user run completed in J012 |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -282,6 +316,7 @@ The handbook records a different checksum for its recovered original scraper. By
 |---|---|---|---|---:|---|---|
 | Legacy sample S001 | 1 October 2026 | Car listings in current CSVs | Not available | 10 | Not measured | User-reported collection; current files inspected |
 | field_validation_2026-10-01 | 1 October 2026 | Same ten car listing IDs, extended attributes | 10 successful detail requests; 4 initial inspection and 6 manifest-recorded | 10 refreshed observations; 0 new listing IDs | Not measured | Cached HTML checksums, batch manifest, integrity audit, J009 |
+| pilot_batch_001 | 1-2 October 2026 | Four family quotas plus general discovery | Latest run: 5 search and 114 detail requests, all successful; earlier failed run retained | 200 cumulative rows; 199 complete; 180 complete quota matches | Not measured | Summary and manifest agree; J012; detailed quality review pending |
 
 For future batches add discovery/detail request counts, duplicates, access stops, ordinary failures, incomplete rows, exclusion counts, review sample size, actual discrepancies, elapsed time, and dataset checksum. Distinguish newly added rows from cumulative totals.
 
@@ -311,7 +346,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J011: <specific event or milestone>
+### J013: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

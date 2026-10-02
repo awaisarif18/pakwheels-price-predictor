@@ -7,6 +7,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+from collector.persistence import replace_file
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -16,7 +18,7 @@ def write_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    replace_file(temporary, path)
 
 
 class RunLog:
@@ -33,7 +35,7 @@ class RunLog:
         root = Path(__file__).resolve().parents[1]
         self.data["code_sha256"] = {
             name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-            for name in ["scraper.py", "collector/fields.py", "collector/sampling.py", "collector/runner.py", "collector/run_log.py"]
+            for name in ["scraper.py", "collector/fields.py", "collector/sampling.py", "collector/runner.py", "collector/run_log.py", "collector/persistence.py"]
         }
         self.save()
 

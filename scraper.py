@@ -23,6 +23,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from collector.fields import OPTIONAL_COLUMNS, extract_fields
+from collector.persistence import replace_file
 from collector.runner import CollectionSettings, run_collection
 from collector.sampling import SearchSpec, load_plan
 
@@ -215,11 +216,11 @@ def save_csv(records, output_dir=None):
     df = pd.DataFrame(records.values(), columns=COLUMNS)
     raw_temporary = raw_file.with_suffix(".csv.tmp")
     df.to_csv(raw_temporary, index=False)
-    raw_temporary.replace(raw_file)
+    replace_file(raw_temporary, raw_file)
     clean = df[df["parse_status"] == "complete"].copy()
     clean_temporary = clean_file.with_suffix(".csv.tmp")
     clean.to_csv(clean_temporary, index=False)
-    clean_temporary.replace(clean_file)
+    replace_file(clean_temporary, clean_file)
     return len(df), len(clean)
 
 
