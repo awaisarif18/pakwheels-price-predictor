@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "experiment_id": "m3_initial_raw_pkr_v1",
+  "seed": 42,
+  "feature_sets": ["F0", "F1", "F2"],
+  "target": "raw_pkr",
+  "candidates": {
+    "median": {"min_group_size": 2},
+    "ridge": {"alpha": 10.0, "solver": "svd"},
+    "random_forest": {"n_estimators": 300, "min_samples_leaf": 2, "max_features": 1.0},
+    "catboost": {"iterations": 300, "depth": 4, "learning_rate": 0.05, "loss_function": "RMSE"}
+  },
+  "note": "One fixed configuration per candidate; no tuning, log targets, early stopping, or final-test access. Median uses family/year then family then make then global, identically across F0-F2."
+}

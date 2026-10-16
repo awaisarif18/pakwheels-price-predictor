@@ -1,6 +1,6 @@
 # Project journal: Pakistan vehicle price predictor
 
-Created: 1 October 2026. Last updated: 2 October 2026.
+Created: 1 October 2026. Last updated: 16 October 2026.
 
 This is the living record of how the project develops: what we tried, what failed, what changed, the evidence behind decisions, and the results we obtained. Keep it updated after meaningful work sessions so it can support a later project report, portfolio case study, or technical handover.
 
@@ -22,25 +22,25 @@ Update this file as part of future project work; its creation does not establish
 
 ## 2. Current position
 
-| Area | Status as of 2 October 2026 | Evidence or limitation |
+| Area | Status as of 16 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Forty-five offline tests pass with HTTP blocked; original parser self-tests passed in J013 |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Fifty-one offline tests pass with HTTP blocked; original parser self-tests passed in J013 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
 | Extraction correctness audit | 108 cached pages checked; 640 of 642 structured comparisons agree; two evidenced corrections | Snapshot agreement only; uncached observations and seller truth are not certified |
 | Make/model/variant normalization | Four-family catalogue preserves 57 observed variant labels | Case/whitespace normalization; no fuzzy trim merges or prediction support declaration |
 | Dataset preparation | Version 2 exports all observations, candidates, and source-checked candidates | Fixed evaluation membership saved in J014; raw/prepared files preserved |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
-| Feature selection | Shared F0–F2 input contract implemented | Identical training/prediction rules; no fitted preprocessing or feature comparison yet |
+| Feature selection | Shared F0–F2 inputs compared with training-fold-only preprocessing | F2 improves pooled MAE for all three ML candidates; individual feature-group ablations remain |
 | Evaluation membership | 57 development records, three 19-record folds, 15 reserved test records | Split ID `pilot_eval_6988c20705512365`; target-independent, family-stratified, group-aware |
-| Algorithm selection | Pending experiments | Baseline, Ridge, Random Forest, and CatBoost are pilot candidates |
-| Model training and evaluation | Not run in this session | No trained predictor or measured model score is claimed |
+| Algorithm selection | Initial exploratory comparison complete; no final winner | CatBoost F2 and Random Forest F2 nearly tied; Alto subgroup limits qualification |
+| Model training and evaluation | 12 combinations, 36 fold fits on 57 development rows | Best observed MAE PKR 492,904; no final-test result or saved predictor |
 | Local demo | Planned | Follows the data/modeling pilot |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: begin exploratory M3 comparisons with a training-only comparable median, followed by Ridge, Random Forest, and CatBoost on the saved development folds. Fit preprocessing within each training fold and keep the reserved test closed during selection. Prepare deeper modeling collection before claiming reliable demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the evaluation contract](docs/pilot-evaluation-contract.md).
+Next work: prepare deeper scoped modeling collection using the measured variant/year gaps, then version the dataset and reevaluate the shortlist. Keep the reserved test closed and complete feature-group/candidate qualification before declaring demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the comparison and error review](docs/pilot-model-comparison.md).
 
 ## 3. The project story so far
 
@@ -275,6 +275,37 @@ Artifacts: [evaluation contract](docs/pilot-evaluation-contract.md), fixed confi
 
 Next step: begin exploratory M3 comparisons using the saved folds. Fit each candidate's imputation/encoding/scaling and baseline medians on its training fold only. Report PKR errors and subgroup counts before deciding what the deeper collection should address.
 
+### J015: first development-only model comparison and source-backed error review
+
+Date: 16 October 2026. Stage: M3. Status: initial comparison complete; demo candidate qualification pending.
+
+Goal: execute the next pilot step using the saved development folds, identify whether ML improves on comparable prices, and use observed errors to guide deeper collection.
+
+Starting point: `pilot_batch_001_v2` and split `pilot_eval_6988c20705512365` provide 57 development rows, three 19-row folds, and 15 reserved test rows. Every fold trains on 38 rows. Frozen feature construction, catalogue, scope, and memberships were retained.
+
+Implementation: added `pilot/models.py`, `pilot/metrics.py`, `pilot/comparison.py`, `pilot/model_report.py`, a thin `scripts/compare_models.py`, and `configs/experiments.json`. A fresh estimator and its fitted preprocessing are created for each fold. The comparable baseline uses family/year, family, make, then global training medians, with minimum non-global support of two. Ridge and Random Forest use training-only imputation/one-hot encoding; Ridge also scales numerical inputs. CatBoost uses declared categorical strings, numeric NaN handling, and one CPU thread. The command exposes no final-test option, refuses existing output directories, verifies hashes/group isolation, and saves configurations, fitted preprocessing details, environment, predictions, fold/subgroup metrics, and provenance.
+
+Experiment: `m3_initial_raw_pkr_v1`. One fixed configuration per algorithm across F0/F1/F2, producing 12 combinations, 36 fold fits, and 684 held-out predictions. Only raw-PKR targets were tried. No tuning, early stopping, log targets, clipping, or final-test scoring occurred. The baseline intentionally gives identical predictions across feature sets.
+
+| Candidate | F0 development MAE PKR | F1 development MAE PKR | F2 development MAE PKR |
+|---|---:|---:|---:|
+| Comparable median | 785,518 | 785,518 | 785,518 |
+| Ridge | 674,946 | 661,056 | 507,766 |
+| Random Forest | 561,449 | 542,106 | 495,765 |
+| CatBoost | 584,872 | 560,263 | 492,904 |
+
+Measured findings: all three F2 ML candidates beat the baseline in all three development folds, and F2 improved pooled MAE over F1 for each algorithm. CatBoost F2 has the lowest pooled MAE, 37.3% below baseline, but is only PKR 2,861, about 0.6%, ahead of Random Forest F2. Random Forest has better median absolute error and median percentage error. CatBoost has a worse Alto MAE than baseline, PKR 309,303 versus PKR 262,938 over 16 rows, about 17.6% worse. This prevents treating aggregate improvement as four-family qualification. No final algorithm was selected.
+
+Coverage/error review: development contains 28 family/variant combinations. Eighteen of 57 held-out listings have variants absent from their training folds; three have unseen cities. CatBoost F2 MAE is PKR 810,457 on those 18 unseen-variant rows and PKR 346,341 on the other 39. Rechecked its ten largest misses against saved pages: all 60 core structured comparisons matched, the main prices agreed with URL-matched offers, and cached headings preserved the variant wording. Six of those ten variants were absent from training and five years were outside the same-family training range. These findings overlap. The 2025 Civic RS and 2012 Alto VXR CNG illustrate missing generation/trim coverage. Three misses remain unexplained by those two checks. No new extraction repair was justified; source agreement does not establish seller truth or a causal explanation for model errors.
+
+Environment: retained Python 3.13.7 and existing collector packages. Added a separate `requirements-modeling.txt`, tested with NumPy 2.5.3, pandas 3.0.6, SciPy 1.18.1, scikit-learn 1.9.1, and CatBoost 1.2.10. The pre-install environment snapshot is private at `data/manifests/m3_environment_before_2026-10-16.txt`; the experiment records all installed package versions. `pip check` passes.
+
+Verification: 51 behavioral tests pass with HTTP blocked, including six new tests covering baseline support/fallbacks, train-only imputation/scaling/vocabulary, unseen categories, missing displacement, deterministic trees, PKR metrics, fresh fold estimators, group isolation, development-only loading, input preservation, output hashes, and overwrite/path refusal. The real comparison also ran with HTTP blocked. It produced no fit warnings or nonpositive predictions and preserved all input artifact fingerprints. No live collection, raw-data correction, model persistence, demo implementation, final-test outcome, or production work occurred.
+
+Artifacts: private ledger at `reports/pilot/m3_batch_001_v1/`, private evidence/coverage review at `reports/pilot/m3_batch_001_review_v1/`, selection summary at `reports/pilot/model_selection.md`, and [tracked comparison note](docs/pilot-model-comparison.md). The run manifest binds dataset/split/configuration/code/output hashes. Models were discarded after scoring; no saved or qualified predictor exists.
+
+Decision and next step: retain CatBoost F2 and Random Forest F2 as an exploratory shortlist, with Ridge as a cheap benchmark. Prepare deeper user-operated modeling collection around older Alto generations, Civic RS/turbo variants, Corolla trim/year tails, and thin variant/year/mileage combinations. Reevaluate on a new dataset/split version before candidate/support qualification. Individual feature-group ablations remain follow-up work. The 15 reserved test rows remain unopened for model outcomes, and no product error tolerance or reliable demo scope has been frozen.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -300,6 +331,7 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H017 | Fuel pattern omitted PHEV | Cached Haval 12033889 explicitly identifies PHEV | Extend fuel parsing; repair only evidence-backed copy; J013 | Fixed; uncached missing fuel remains unresolved |
 | H018 | Generic placeholder handling erased meaningful unknown registration semantics | Preparation regression failed during development | Restrict category missingness rules; supersede v1 with v2; J013 | Fixed; metadata preservation test passes |
 | H019 | Checked population is too small for stable family-level evaluation | J014 leaves only 3–4 reserved test groups per family and 38 training records per fold | Treat comparisons as exploratory, report counts, and deepen coverage before demo claims | Open; fixed splits do not solve the sample-size limit |
+| H020 | Aggregate improvement hides subgroup and generation gaps | J015: CatBoost F2 improves overall MAE by 37.3%, but Alto MAE is 17.6% worse than baseline; large misses include unseen trims and out-of-training-range years | Deepen scoped coverage and reevaluate support; do not qualify all four families from pooled MAE | Open; observed in exploratory development evaluation |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -311,9 +343,9 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D002 | Start with a data/modeling pilot before production work | Data contracts and model evidence need to guide the application | Accepted execution sequence |
 | D003 | Reuse the current scraper and change it incrementally | Existing collection logic works; the next changes should solve demonstrated needs | Accepted pilot approach |
 | D004 | Use separate car and motorcycle predictors | Different identities, schemas, and price distributions | Planned implementation; evaluate each independently |
-| D005 | Compare a median baseline, Ridge, Random Forest, and CatBoost | Test several useful modeling approaches with manageable experimental cost | Candidate list; no winner selected |
+| D005 | Compare a median baseline, Ridge, Random Forest, and CatBoost | Test several useful modeling approaches with manageable experimental cost | Initial F0–F2 matrix completed in J015; no final winner selected |
 | D006 | Preserve variants, raw observations, and exclusion reasons | Avoid hidden identity loss and make preparation reproducible | Implemented in J013; continue preserving versions |
-| D007 | Keep preprocessing reusable between training and prediction | Prevent a demo from interpreting inputs differently from the trained model | Planned implementation |
+| D007 | Keep preprocessing reusable between training and prediction | Prevent a demo from interpreting inputs differently from the trained model | Shared inputs implemented in J014; fold pipelines in J015; saved-predictor parity remains |
 | D008 | Build a local saved-predictor demo before large training | Verify the complete workflow at modest cost | Planned; CLI then a small local UI |
 | D009 | Reassess framework and infrastructure after pilot results | Actual workflows, latency, memory, and durability needs remain unknown | Deferred; production handover milestone |
 | D010 | Add assembly, body type, registration year, and listing date | User-selected scope; explicit date semantics and unknown values are retained | Implemented in J009; broader missingness/semantics reviewed in J013 |
@@ -327,6 +359,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D018 | Defer registration timing features | Only 40/137 candidates contain registration year and its meaning is unknown | Keep the fact/provenance; reassess only with interpretable evidence and validation |
 | D019 | Freeze family-stratified group splits with seed 42 before modeling | Every algorithm/feature set needs identical membership without target-driven allocation | Implemented in J014; 57 development/15 test; retire untouched status if test guides tuning |
 | D020 | Share unfitted feature rules and explicit missing conventions across training/prediction | Avoid input drift, silent trim substitutions, and price/metadata leakage | Implemented in J014; fitted preprocessing remains inside future training folds |
+| D021 | Run one fixed raw-PKR configuration per algorithm before tuning | Establish a bounded initial comparison without selecting lucky trials or using final-test outcomes | Implemented in J015; any later trials need named configurations |
+| D022 | Keep the M3 shortlist provisional and deepen coverage before demo qualification | Tiny overall CatBoost/Forest difference and worse Alto baseline comparison do not support a final algorithm/support decision | Accepted after J015; reserved test stays closed |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -386,12 +420,16 @@ For future batches add discovery/detail request counts, duplicates, access stops
 
 ### Model experiment ledger
 
-No model experiment results are available yet.
+J015 records the first model experiment. Metrics below are pooled held-out development errors over 57 listings, not final-test results.
 
 When experiments run, record:
 
 | Experiment ID | Dataset/split | Features | Model and configuration | Validation MAE PKR | Final test MAE PKR | Result |
 |---|---|---|---|---|---|---|
+| m3_initial_raw_pkr_v1 / median_F0 | pilot_batch_001_v2 / pilot_eval_6988c20705512365 | F0 grouping subset | Training-only comparable median; minimum group size 2 | 785,518 | Not run | Baseline; identical predictions for F1/F2 |
+| m3_initial_raw_pkr_v1 / ridge_F2 | Same frozen dataset/split | F2 | Ridge alpha 10, SVD; fold-only pipeline | 507,766 | Not run | Cheap benchmark retained |
+| m3_initial_raw_pkr_v1 / random_forest_F2 | Same frozen dataset/split | F2 | 300 trees, minimum leaf 2, seed 42 | 495,765 | Not run | Exploratory shortlist |
+| m3_initial_raw_pkr_v1 / catboost_F2 | Same frozen dataset/split | F2 | 300 iterations, depth 4, learning rate 0.05, RMSE, seed 42 | 492,904 | Not run | Lowest pooled MAE; Alto gap blocks broad qualification |
 
 Include fold variability, median error, subgroup counts/errors, training time, and artifact references in the associated story entry. Label exploratory, selected, rejected, and superseded experiments explicitly. A final-test metric is `Not run` until the frozen candidate is evaluated.
 
@@ -405,14 +443,15 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J010 extends offline coverage to twenty-five behavioral tests and prepares bounded family sampling with auditable outputs. The user-operated collection pilot is awaiting execution; its quotas are not results.
 - J012 records completion of all field-pilot quotas. J013 reviews cached evidence, fixes two extraction issues, and exports versioned candidate datasets; thirty-six behavioral tests and both parser self-tests pass offline.
 - J014 implements shared F0–F2 preparation and freezes 57 development/15 test records with three 19-record folds. Forty-five behavioral tests pass with HTTP blocked; no model metrics exist.
-- A local prediction demo, trained model, measured regression result, and deployed application are pending.
+- J015 runs 12 development comparisons with training-fold-only preprocessing and reviews the largest misses. Best pooled MAE is PKR 492,904, with sparse coverage and an Alto subgroup regression. Fifty-one behavioral tests pass; final test remains unopened.
+- A local prediction demo, saved qualified predictor, final-test result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
 
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J015: <specific event or milestone>
+### J016: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

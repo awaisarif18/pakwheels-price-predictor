@@ -6,4 +6,4 @@ Private derived datasets and evaluation artifacts live here. Preserve raw inputs
 - `pilot_batch_001_v1/`: superseded development output; do not use for modeling.
 - `pilot_batch_001_eval_v1/`: fixed split membership and shared feature contract for the 72 checked candidates. Development has 57 records and three 19-record validation folds; 15 records are reserved for a future demo test.
 
-Commands refuse existing output directories. Use a new version when inputs or rules change. No model or fitted preprocessing exists yet.
+Commands refuse existing output directories. Use a new version when inputs or rules change. Initial M3 comparisons have fitted preprocessing within development folds; no saved or qualified predictor exists yet. See [the comparison](../../docs/pilot-model-comparison.md).

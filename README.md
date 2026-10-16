@@ -12,6 +12,7 @@ The current stage is the data and modeling pilot. Reuse the working car collecto
 - [Run the field collection pilot](docs/collection-pilot-run.md)
 - [First pilot quality review and preparation rules](docs/pilot-data-review.md)
 - [Shared features and fixed evaluation splits](docs/pilot-evaluation-contract.md)
+- [First model comparison and measured limitations](docs/pilot-model-comparison.md)
 
 ## Current structure
 
@@ -36,11 +37,16 @@ pakwheels-price-predictor/
     features.py                 Shared unfitted training/prediction inputs
     splits.py                   Deterministic family/group assignments
     evaluate.py                 Frozen population and development-data loader
+    models.py                   Training-fold candidate pipelines and median baseline
+    comparison.py               Offline comparison and experiment ledger
+    metrics.py                  PKR errors and subgroup summaries
+    model_report.py             Readable development comparison report
   scripts/
     audit_data.py               Audit command entry point
     validate_collection.py      Reparse cached sample or fetch missing evidence
     prepare_dataset.py          Offline versioned preparation command
     prepare_evaluation.py       Freeze feature contract and evaluation splits
+    compare_models.py           Compare candidates on development folds only
   tests/
     test_audit.py               Data-integrity and review-preservation checks
     test_collection_fields.py   New-field meaning and contamination checks
@@ -49,6 +55,7 @@ pakwheels-price-predictor/
     collection_schema.json      Version 2 field decision contract
     collection_pilot.json       Four family quotas plus general discovery
     evaluation_pilot.json       Fixed seed, reserved test, three validation folds
+    experiments.json            Fixed initial M3 candidate configurations
   catalogues/cars.json           Four families and observed variant labels
   docs/
     plans/                      Pilot and future production plans
@@ -133,7 +140,20 @@ To reproduce offline into a new directory:
 .\.venv\Scripts\python.exe -m scripts.prepare_evaluation --output-dir data/processed/pilot_batch_001_eval_v2
 ```
 
-Next is exploratory M3 comparison using training-fold-only preprocessing. Three or four test records per family cannot establish a reliable four-family demo.
+## First model comparison
+
+The initial M3 comparison is complete: 12 algorithm/feature combinations, 36 training-fold fits, and 57 held-out development predictions per combination. F2, which adds fuel, transmission, displacement, assembly, and body type to family/year/mileage/city/variant, improved all three ML candidates over F1.
+
+Development MAE was PKR 785,518 for the median baseline, 507,766 for Ridge F2, 495,765 for Random Forest F2, and 492,904 for CatBoost F2. CatBoost's small overall lead does not establish a winner: its Alto MAE was worse than the baseline, and rare variants/year ranges caused large coverage gaps. No demo candidate or support policy is finalized. The reserved test remains unopened for model outcomes.
+
+See [the comparison and error review](docs/pilot-model-comparison.md) and [full private report](reports/pilot/m3_batch_001_v1/model_selection.md). Next is deeper scoped modeling collection preparation, followed by reevaluation and candidate qualification. Three or four test records per family cannot establish a reliable four-family demo.
+
+Modeling uses additional dependencies in the existing environment. Reproduce offline into a new report directory:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-modeling.txt
+.\.venv\Scripts\python.exe -m scripts.compare_models --output-dir reports/pilot/m3_batch_001_reproduction
+```
 
 ## Verify offline behavior
 
@@ -142,7 +162,7 @@ Next is exploratory M3 comparison using training-fold-only preprocessing. Three 
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Forty-five behavioral tests pass with HTTP requests blocked. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Fifty-one behavioral tests pass with HTTP requests blocked, including training-fold preprocessing and development-only comparison checks. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
 
 Reproduce new-field extraction from cached pages without network access:
 
