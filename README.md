@@ -13,6 +13,9 @@ The current stage is the data and modeling pilot. Reuse the working car collecto
 - [First pilot quality review and preparation rules](docs/pilot-data-review.md)
 - [Shared features and fixed evaluation splits](docs/pilot-evaluation-contract.md)
 - [First model comparison and measured limitations](docs/pilot-model-comparison.md)
+- [Larger batch review, consolidated data, and follow-up comparison](docs/modeling-batch-002-review.md)
+- [Reviewed dataset and preserved evaluation rebuild](docs/reviewed-dataset-rebuild.md)
+- [Model comparison on the reviewed data](docs/reviewed-model-comparison.md)
 
 ## Current structure
 
@@ -116,6 +119,12 @@ The user has confirmed the ten original records are accurate. The extended schem
 
 ## Current prepared dataset
 
+The current reviewed version is `modeling_combined_002_v2`: 626 candidates and 563 eligible modeling rows, including one explicit user-accepted price exception. It applies all twelve review decisions, excludes the six rejected IDs, and corrects case 8 to 100,000 km. Evaluation version `modeling_combined_002_eval_v2` contains 449 development rows and the unchanged 114 reserved test rows. Registration stays outside model inputs. The [reviewed model comparison](docs/reviewed-model-comparison.md) is complete: CatBoost F2 development MAE is PKR 266,885, Random Forest F2 is 280,359, and the median baseline is 434,057. Both tree candidates remain provisional; no saved predictor or final-test score exists. See [the rebuild record](docs/reviewed-dataset-rebuild.md).
+
+The historical 20 October larger dataset is `modeling_combined_002_v1`: 808 observations from two batches consolidate to 804 unique listing IDs, 630 candidates, and 567 candidates with cached price agreement. Its fixed evaluation has 453 development rows and 114 reserved test rows; all 72 earlier evaluation partitions/folds are preserved. Random Forest F2 has exploratory development MAE PKR 311,639, versus PKR 458,508 for the median baseline. CatBoost F2 is close at PKR 314,476. Unusually low source asking prices and one source identity ambiguity still need review before demo qualification. See [the larger-batch review](docs/modeling-batch-002-review.md) for evidence, outputs, and reproduction. The original pilot below is preserved as historical evidence.
+
+21 October review update: all twelve case decisions are recorded and the reviewed rebuild above is complete. Persistent manual decisions block reuse of old modeling populations containing rejected IDs or the old mileage. Version 1 counts/scores remain historical. Registration year stays metadata only and is excluded from model inputs.
+
 Version `pilot_batch_001_v2` contains 200 normalized observations, 137 candidates from four families in model years 2010–2026, and 72 candidates whose cached visible asking price agrees with their URL-matched structured offer. Sixty-five other candidates remain pending price verification. Source agreement does not validate a seller's claims or a sale price.
 
 Cached evidence identified a recommended-car price contaminating one Civic's extraction and an unsupported PHEV fuel label. Both parser issues were fixed; evidenced repairs are recorded in derived files, with raw data preserved. See [the review](docs/pilot-data-review.md) and [generated quality report](reports/pilot/pilot_batch_001/data_quality.md).
@@ -146,7 +155,7 @@ The initial M3 comparison is complete: 12 algorithm/feature combinations, 36 tra
 
 Development MAE was PKR 785,518 for the median baseline, 507,766 for Ridge F2, 495,765 for Random Forest F2, and 492,904 for CatBoost F2. CatBoost's small overall lead does not establish a winner: its Alto MAE was worse than the baseline, and rare variants/year ranges caused large coverage gaps. No demo candidate or support policy is finalized. The reserved test remains unopened for model outcomes.
 
-See [the comparison and error review](docs/pilot-model-comparison.md) and [full private report](reports/pilot/m3_batch_001_v1/model_selection.md). Next is deeper scoped modeling collection preparation, followed by reevaluation and candidate qualification. Three or four test records per family cannot establish a reliable four-family demo.
+See [the first comparison and error review](docs/pilot-model-comparison.md) and [full private report](reports/pilot/m3_batch_001_v1/model_selection.md). The subsequent deeper collection, consolidated dataset, and reevaluation are now complete in [the follow-up review](docs/modeling-batch-002-review.md). The [reviewed rerun](docs/reviewed-model-comparison.md) is now complete. Next is model-year/feature-group ablation and candidate/support qualification. All test predictions remain unopened.
 
 Modeling uses additional dependencies in the existing environment. Reproduce offline into a new report directory:
 
@@ -162,7 +171,7 @@ Modeling uses additional dependencies in the existing environment. Reproduce off
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Fifty-one behavioral tests pass with HTTP requests blocked, including training-fold preprocessing and development-only comparison checks. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Sixty-six behavioral tests pass with HTTP requests blocked, including manual reviews, corrected mileage, development-only comparison, and evaluation-history preservation. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
 
 Reproduce new-field extraction from cached pages without network access:
 

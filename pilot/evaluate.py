@@ -9,6 +9,7 @@ from pathlib import Path
 from pilot.features import feature_contract, prepare_input, prepare_target
 from pilot.identity import load_catalogue
 from pilot.splits import validate_splits
+from pilot.reviews import reject_excluded_population
 
 POPULATION = "source_checked_candidates.csv"
 
@@ -35,7 +36,8 @@ def load_population(dataset_dir: Path, catalogue_path: Path, scope_path: Path) -
     if len(rows) != manifest["source_checked_candidates"]:
         raise ValueError("Source-checked population count differs from its manifest")
     for row in rows:
-        if row.get("source_checked_candidate") != "True" or row.get("source_price_verified") != "True" or row.get("exclusion_reasons"):
+        price_checked = row.get("source_price_verified") == "True" or row.get("manual_price_accepted") == "True"
+        if row.get("source_checked_candidate") != "True" or not price_checked or row.get("exclusion_reasons"):
             raise ValueError("Evaluation population includes an ineligible or unchecked row")
     return rows, load_catalogue(catalogue_path), json.loads(scope_path.read_text(encoding="utf-8")), manifest
 
@@ -82,6 +84,7 @@ def load_evaluation_data(dataset_dir: Path, evaluation_dir: Path, feature_set: s
     by_id = {row["listing_id"]: row for row in rows}
     chosen = [item for item in splits["assignments"] if item["partition"] == partition]
     selected = [by_id[item["listing_id"]] for item in chosen]
+    reject_excluded_population(selected)
     return EvaluationData(
         listing_ids=tuple(item["listing_id"] for item in chosen),
         group_ids=tuple(item["group_id"] for item in chosen),

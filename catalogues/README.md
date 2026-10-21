@@ -5,3 +5,5 @@
 `pilot/identity.py` matches explicit catalogue labels. It does not merge similar-looking trims or use fuzzy matching. Unknown variants stay unresolved; an unspecified variant does not mean base trim. Extend aliases only with documented source evidence and protect meaningful engine, transmission, trim, and package distinctions.
 
 See [the first pilot review](../docs/pilot-data-review.md). The original pending worksheet remains available at `reports/pilot/identity_review.csv`; its existence does not mean every identity was manually certified. No motorcycle catalogue exists yet.
+
+The combined modeling dataset derives `data/processed/modeling_combined_002_v1/catalogue.json` with 94 labels. Its 37 additions require exact cached H1 agreement and one URL-matched structured product. The smaller tracked catalogue remains unchanged for historical reproducibility. Addition evidence is in the combined preparation report. These observed labels do not settle contradictory source identities or declare prediction support; see [the later review](../docs/modeling-batch-002-review.md).

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "seed": 42,
+  "test_fraction": 0.2,
+  "development_folds": 3,
+  "population": "source_checked_candidates.csv",
+  "history_policy": "preserve_partitions_quarantine_collisions",
+  "note": "Preserve old partitions; reserve new groups by family. This is exploratory mixed-period evaluation, not temporal generalization."
+}

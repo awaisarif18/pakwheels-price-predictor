@@ -11,6 +11,7 @@ from pilot.evaluate import POPULATION, load_population, sha256
 from pilot.features import FEATURE_SETS, feature_contract, prepare_input, prepare_target
 from pilot.paths import PROJECT_ROOT
 from pilot.splits import build_splits, split_counts
+from pilot.continued_splits import build_continued_splits
 
 
 def save_json(path: Path, value: dict) -> None:
@@ -34,10 +35,20 @@ def prepare_evaluation(dataset: Path, output: Path, config_path: Path,
         for feature_set in FEATURE_SETS:
             prepare_input(row, feature_set, catalogue, scope)
         prepare_target(row)
-    splits = build_splits(rows, config)
+    if config.get("history_policy") == "preserve_partitions_quarantine_collisions":
+        if dataset_manifest.get("history_policy") != config["history_policy"]:
+            raise ValueError("Continued evaluation requires consolidated historical membership")
+        parent = Path(dataset_manifest["history_parent"])
+        if sha256(parent / "manifest.json") != dataset_manifest["history_parent_manifest_sha256"]:
+            raise ValueError("Historical evaluation manifest changed")
+        splits = build_continued_splits(rows, config)
+    elif dataset_manifest.get("history_policy"):
+        raise ValueError("Consolidated history requires an explicit preservation policy")
+    else:
+        splits = build_splits(rows, config)
     code_hashes = {name: sha256(PROJECT_ROOT / name) for name in (
         "pilot/features.py", "pilot/identity.py", "pilot/evidence.py", "pilot/splits.py",
-        "pilot/evaluate.py", "scripts/prepare_evaluation.py")}
+        "pilot/evaluate.py", "scripts/prepare_evaluation.py", "pilot/continued_splits.py")}
     identity = {
         "dataset_manifest_sha256": sha256(dataset / "manifest.json"),
         "population_sha256": sha256(dataset / POPULATION), "config_sha256": sha256(config_path),
@@ -60,10 +71,17 @@ def prepare_evaluation(dataset: Path, output: Path, config_path: Path,
             save_json(output / name, value)
     partition_counts = Counter(item["partition"] for item in splits["assignments"])
     fold_counts = Counter(item["validation_fold"] for item in splits["assignments"] if item["partition"] == "development")
+    allocation_note = (
+        "The reviewed rebuild preserves the parent test reservation and surviving development folds. "
+        "Newly reinstated groups enter development only, balanced by family/global counts in deterministic seeded order. "
+        "No new test quota is selected from review outcomes."
+        if config.get("new_group_policy") == "development_only" else
+        f"Seeded SHA-256 ordering allocates the nearest {config['test_fraction']:.0%} group quota per family, then balances development folds by family/global row counts. Group membership remains intact. Targets do not influence allocation."
+    )
     report = [
         "# Fixed exploratory evaluation splits", "",
         f"Split ID: `{split_id}`. Dataset: `{dataset_manifest['dataset_id']}`.", "",
-        f"Population: {len(rows)} source-checked rows. Development: {partition_counts['development']}. Reserved demo test: {partition_counts['demo_test']}.",
+        f"Population: {len(rows)} source-checked or explicitly user-accepted rows. Development: {partition_counts['development']}. Reserved demo test: {partition_counts['demo_test']}.",
         f"Development validation-fold counts: {dict(sorted(fold_counts.items()))}.", "",
         "| Family | Partition | Validation fold | Rows | Groups |",
         "|---|---|---:|---:|---:|",
@@ -73,13 +91,18 @@ def prepare_evaluation(dataset: Path, output: Path, config_path: Path,
         report.append(f"| {item['family']} | {item['partition']} | {fold} | {item['rows']} | {item['groups']} |")
     report += [
         "", "## Rules and limits", "",
-        f"Seeded SHA-256 ordering allocates the nearest {config['test_fraction']:.0%} group quota per family, then balances development folds by family/global row counts. Group membership remains intact. Targets do not influence allocation.",
+        allocation_note,
         "Only family is stratified. Variant, year, city, and price coverage may be sparse or uneven; inspect development coverage and report unseen categories during later validation.",
         "Each development row validates once; the remaining development folds train. The demo test is excluded from every development fold.",
         "F0, F1, and F2 share exact row membership. Numerical missing values remain null; missing categorical values use a fixed token. No fitted imputation, encoding, scaling, target transform, model, or score exists.",
         "The test is reserved and unopened for model outcomes. Few test groups per family make later errors exploratory and unstable. This split does not establish demo support or chronological generalization.",
         "Use the development loader by default. Open demo_test only after freezing the candidate; if its results guide further tuning, retire its untouched status and obtain a new independent test.",
     ]
+    if config.get("history_policy"):
+        report += ["", "History policy: prior development groups stay in development; prior test groups stay reserved. "
+                   "New-group allocation follows the saved configuration. Possible-repost groups spanning old development/test "
+                   "history are quarantined before splitting. No old development score is relabeled as untouched test evidence.",
+                   "This is a larger mixed-period evaluation, not a chronological future-market test."]
     (output / "split_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     manifest = {
         "evaluation_schema_version": 1, "split_id": split_id,

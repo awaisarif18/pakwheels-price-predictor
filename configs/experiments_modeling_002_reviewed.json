@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "experiment_id": "m3_modeling_002_reviewed_raw_pkr_v1",
+  "seed": 42,
+  "feature_sets": ["F0", "F1", "F2"],
+  "target": "raw_pkr",
+  "candidates": {
+    "median": {"min_group_size": 2},
+    "ridge": {"alpha": 10.0, "solver": "svd"},
+    "random_forest": {"n_estimators": 300, "min_samples_leaf": 2, "max_features": 1.0},
+    "catboost": {"iterations": 300, "depth": 4, "learning_rate": 0.05, "loss_function": "RMSE"}
+  },
+  "note": "Rerun the same fixed algorithm configurations on reviewed modeling_combined_002_v2 and its preserved development folds. Apply the recorded exclusions, mileage correction, and explicit price acceptance. Registration remains metadata only. No tuning, new feature experiments, log targets, early stopping, or reserved-test access. Compare historical scores descriptively because development membership and corrected inputs differ."
+}

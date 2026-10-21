@@ -1,0 +1,17 @@
+{
+  "plan_version": 1,
+  "purpose": "Deeper modeling collection after M3; 600 assigned complete family matches across broad and gap-focused searches. Use --ads 50 per user-operated run to retain every fetched listing's evidence. Search strata are intentions, verified offline after collection; cross-batch uniqueness is not guaranteed.",
+  "searches": [
+    {"name": "corolla_broad", "url_template": "https://www.pakwheels.com/used-cars/toyota-corolla/688?page={page}", "expected_make": "Toyota", "expected_model": "Corolla", "target_complete_rows": 100, "max_detail_requests": 150, "max_pages": 20},
+    {"name": "city_broad", "url_template": "https://www.pakwheels.com/used-cars/honda-city/664?page={page}", "expected_make": "Honda", "expected_model": "City", "target_complete_rows": 100, "max_detail_requests": 150, "max_pages": 20},
+    {"name": "civic_broad", "url_template": "https://www.pakwheels.com/used-cars/honda-civic/642?page={page}", "expected_make": "Honda", "expected_model": "Civic", "target_complete_rows": 100, "max_detail_requests": 150, "max_pages": 20},
+    {"name": "alto_broad", "url_template": "https://www.pakwheels.com/used-cars/suzuki-alto/658?page={page}", "expected_make": "Suzuki", "expected_model": "Alto", "target_complete_rows": 100, "max_detail_requests": 150, "max_pages": 20},
+    {"name": "alto_2010", "url_template": "https://www.pakwheels.com/used-cars/suzuki-alto-2010/3165?page={page}", "expected_make": "Suzuki", "expected_model": "Alto", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "alto_2011", "url_template": "https://www.pakwheels.com/used-cars/suzuki-alto-2011/3166?page={page}", "expected_make": "Suzuki", "expected_model": "Alto", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "alto_2012", "url_template": "https://www.pakwheels.com/used-cars/suzuki-alto-2012/3167?page={page}", "expected_make": "Suzuki", "expected_model": "Alto", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "civic_2022", "url_template": "https://www.pakwheels.com/used-cars/honda-civic-2022/851047?page={page}", "expected_make": "Honda", "expected_model": "Civic", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "civic_2025_multan", "url_template": "https://www.pakwheels.com/used-cars/honda-civic-2025-multan/2929823?page={page}", "expected_make": "Honda", "expected_model": "Civic", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "corolla_2013", "url_template": "https://www.pakwheels.com/used-cars/toyota-corolla-2013/3426?page={page}", "expected_make": "Toyota", "expected_model": "Corolla", "target_complete_rows": 25, "max_detail_requests": 40, "max_pages": 10},
+    {"name": "corolla_2024_lahore", "url_template": "https://www.pakwheels.com/used-cars/toyota-corolla-2024-lahore/2675395?page={page}", "expected_make": "Toyota", "expected_model": "Corolla", "target_complete_rows": 50, "max_detail_requests": 75, "max_pages": 10}
+  ]
+}

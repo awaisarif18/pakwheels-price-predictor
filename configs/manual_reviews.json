@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-21",
+  "registration_year_policy": "metadata_only_excluded_from_all_model_inputs",
+  "decisions": [
+    {"listing_id": "12137528", "decision": "exclude", "reason": "User confirms the 2026 Alto asking-price entry is wrong", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12137467", "decision": "exclude", "reason": "User confirms the 2014 City asking-price entry is wrong", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12089564", "decision": "exclude", "reason": "User rejected review case 3, Civic Oriel 2018", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12137385", "decision": "exclude", "reason": "User rejected review case 4, Corolla GLi 2011", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12057457", "decision": "exclude", "reason": "User rejected review case 5, Corolla GLi 2013 Jhelum", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12051599", "decision": "exclude", "reason": "User rejected review case 12, City EXi 2001; also outside candidate years", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12127719", "decision": "keep", "reason": "User accepted review case 6; preserve advertised identity and its Corolla/Cross ambiguity note without an invented family correction", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12075110", "decision": "keep", "reason": "User accepted review case 7, City Aspire S CVT 2025", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12136988", "decision": "keep", "reason": "User accepted review case 8 and explicitly confirmed mileage is 100,000 km", "reviewer": "user", "reviewed_at": "2026-10-21", "corrections": {"mileage_km": {"from": 100, "to": 100000}}},
+    {"listing_id": "12029618", "decision": "keep", "reason": "User accepted review case 9, Civic RS Turbo 2022", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "12108223", "decision": "keep", "reason": "User accepted review case 10, Corolla GLi 2014", "reviewer": "user", "reviewed_at": "2026-10-21"},
+    {"listing_id": "11689890", "decision": "keep", "reason": "User accepted review case 11 and its displayed asking price despite the PKR 1 structured-price precision difference", "reviewer": "user", "reviewed_at": "2026-10-21", "accept_price_precision": {"displayed_pkr": 2800000, "structured_pkr": 2799999}}
+  ]
+}

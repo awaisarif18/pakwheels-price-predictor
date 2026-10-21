@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "seed": 42,
+  "test_fraction": 0.2,
+  "development_folds": 3,
+  "population": "source_checked_candidates.csv",
+  "history_policy": "preserve_partitions_quarantine_collisions",
+  "new_group_policy": "development_only",
+  "note": "Reviewed rebuild of the same collected population. Preserve the larger parent evaluation's 114 reserved records and surviving development folds. Put manually reinstated listings in development only; do not rebalance or select new test records using review outcomes."
+}

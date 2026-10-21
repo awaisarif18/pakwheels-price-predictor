@@ -1,6 +1,6 @@
 # Project journal: Pakistan vehicle price predictor
 
-Created: 1 October 2026. Last updated: 16 October 2026.
+Created: 1 October 2026. Last updated: 21 October 2026.
 
 This is the living record of how the project develops: what we tried, what failed, what changed, the evidence behind decisions, and the results we obtained. Keep it updated after meaningful work sessions so it can support a later project report, portfolio case study, or technical handover.
 
@@ -22,25 +22,26 @@ Update this file as part of future project work; its creation does not establish
 
 ## 2. Current position
 
-| Area | Status as of 16 October 2026 | Evidence or limitation |
+| Area | Status as of 21 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Fifty-one offline tests pass with HTTP blocked; original parser self-tests passed in J013 |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Sixty-six offline tests pass with HTTP blocked; no live collector launched during J017-J020 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
-| Extraction correctness audit | 108 cached pages checked; 640 of 642 structured comparisons agree; two evidenced corrections | Snapshot agreement only; uncached observations and seller truth are not certified |
-| Make/model/variant normalization | Four-family catalogue preserves 57 observed variant labels | Case/whitespace normalization; no fuzzy trim merges or prediction support declaration |
-| Dataset preparation | Version 2 exports all observations, candidates, and source-checked candidates | Fixed evaluation membership saved in J014; raw/prepared files preserved |
+| Deeper modeling collection | User saved 608 unique IDs, 606 complete rows, and 571/600 assigned matches | Nine quotas met; two configured searches exhausted; stop unchanged plan |
+| Extraction correctness audit | New batch: 608 cached pages checked; 3,634/3,636 core comparisons agree; two source price differences | Initial 108-page audit and evidenced fixes preserved; source agreement does not certify seller truth |
+| Make/model/variant normalization | Derived combined catalogue preserves 94 observed labels | 37 evidence-backed additions; user keeps the advertised Corolla identity despite the preserved Corolla/Cross ambiguity |
+| Dataset preparation | Reviewed v2 exports 808 observations, 804 unique IDs, 626 candidates, and 563 eligible rows | J020 applies all review decisions: 562 exact-price agreements plus one explicit user acceptance; case 8 corrected to 100,000 km |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
-| Feature selection | Shared F0–F2 inputs compared with training-fold-only preprocessing | F2 improves pooled MAE for all three ML candidates; individual feature-group ablations remain |
-| Evaluation membership | 57 development records, three 19-record folds, 15 reserved test records | Split ID `pilot_eval_6988c20705512365`; target-independent, family-stratified, group-aware |
-| Algorithm selection | Initial exploratory comparison complete; no final winner | CatBoost F2 and Random Forest F2 nearly tied; Alto subgroup limits qualification |
-| Model training and evaluation | 12 combinations, 36 fold fits on 57 development rows | Best observed MAE PKR 492,904; no final-test result or saved predictor |
+| Feature selection | Shared F0–F2 inputs compared with training-fold-only preprocessing | Registration year remains metadata only by explicit J018 instruction; feature-group ablations remain |
+| Evaluation membership | Reviewed v2 has 449 development records in folds of 150, 150, and 149; 114 reserved test records | Split ID `pilot_eval_f87fae24bb5634f0`; surviving parent folds and all 114 test records preserved |
+| Algorithm selection | Reviewed comparison complete; CatBoost F2 leads provisionally | Development MAE PKR 266,885 versus Forest F2 280,359 and comparable median 434,057; Forest is better on Civic |
+| Model training and evaluation | Reviewed run completed 12 combinations and 36 development fits | 449 held-out predictions per combination; year/feature ablations pending; no final-test result or saved predictor |
 | Local demo | Planned | Follows the data/modeling pilot |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: prepare deeper scoped modeling collection using the measured variant/year gaps, then version the dataset and reevaluate the shortlist. Keep the reserved test closed and complete feature-group/candidate qualification before declaring demo support. Live collection remains reserved for the user in [AGENTS.md](AGENTS.md). See [the comparison and error review](docs/pilot-model-comparison.md).
+Next work: named model-year/individual feature-group experiments on the reviewed v2 development folds, followed by explicit demo support/error criteria and a frozen candidate. J021 completes the fixed comparison; its metrics supersede historical v1 rankings for current selection. Keep all 114 reserved test outcomes closed during selection. Registration year stays separate from all inputs. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
 
 ## 3. The project story so far
 
@@ -306,6 +307,103 @@ Artifacts: private ledger at `reports/pilot/m3_batch_001_v1/`, private evidence/
 
 Decision and next step: retain CatBoost F2 and Random Forest F2 as an exploratory shortlist, with Ridge as a cheap benchmark. Prepare deeper user-operated modeling collection around older Alto generations, Civic RS/turbo variants, Corolla trim/year tails, and thin variant/year/mileage combinations. Reevaluate on a new dataset/split version before candidate/support qualification. Individual feature-group ablations remain follow-up work. The 15 reserved test rows remain unopened for model outcomes, and no product error tolerance or reliable demo scope has been frozen.
 
+### J016: preparing the next user-operated collection command
+
+Date: 16 October 2026. Stage: deeper modeling collection preparation. Status: configuration prepared; live results not run.
+
+The user requested commands to collect more data and will report completion before offline follow-up. Added `configs/collection_modeling_002.json` and [run instructions](docs/modeling-collection-run.md), using source routes found only in cached pilot HTML. The plan targets 600 assigned complete family matches: four broad 100-row searches and 200 matches across older Alto and Civic/Corolla year-tail routes. The available 2025 Civic and 2024 Corolla routes are city-specific. Family matching is enforced, but intended year/trim strata are not independently enforced by the existing runner; actual coverage remains an offline review task. Listing overlap across prior batches must be consolidated before training.
+
+The handoff caps each invocation at 50 detail attempts. Existing first-50 evidence retention then saves every successfully parsed detail page without collector changes. Quotas accumulate in the new `data/raw/modeling_batch_002/` directory; unchanged commands resume it without refresh. Search availability, achieved quotas, new independent vehicles, source agreement, and usable-modeling counts are not measured. No live collector, refresh, fetch-missing command, or source HTTP request was launched.
+
+Offline verification: configuration loading validates all eleven groups and a 600-match target; the existing collection-runner behavioral tests pass with HTTP blocked. No new implementation test was added for the reversible configuration change. Existing data, split membership, models, and collector code were preserved. Next action belongs to the user: run the documented command, inspect the saved summary after each chunk, and report completion or restriction/search exhaustion before offline follow-up.
+
+### J017: reviewing the deeper batch, consolidating history, and reevaluating models
+
+Date: 20 October 2026. Stages: offline preparation and exploratory M3. Status: completed; final candidate qualification pending.
+
+User-reported collection: the user completed resumable chunks on 16-17 October and asked to continue offline. Saved manifests confirm 608 unique listing IDs, 606 complete rows, and 571/600 assigned matches. Nine quotas were fulfilled; Civic 2025 Multan reached 22/25 and Corolla 2024 Lahore reached 24/50 before their page budgets exhausted. The final chunk added no new listings. This is sufficient to stop the unchanged collection plan, not proof of independent usable training vehicles.
+
+Integrity/source review: raw/clean exports agree and pass schema/numeric/duplicate checks. All 608 current rows have checksum-verified cached evidence. Visible main prices agree with URL-matched structured offers on 604. Of 3,636 structured field comparisons, 3,634 match and two prices differ. One price is displayed/stored as 2,800,000 PKR versus structured 2,799,999; another displays 850,000 versus structured 849,500. These are unresolved source representation differences, not demonstrated parser bugs. Both remain excluded under the existing exact-agreement rule. Two other rows lack a usable priced product/target. No new source repair was justified.
+
+Implementation: added `scripts/prepare_modeling_dataset.py`, `pilot/consolidate.py`, `pilot/continued_splits.py`, and explicit evaluation/experiment configurations. Source labels require an exact cached H1 and one current product before catalogue admission. The derived catalogue adds 37 labels to the earlier 57, preserving trim wording and the old catalogue. Consolidation exports every stored observation, selects the latest timestamp per listing without older-checked-price fallback, links historical exact-specification/repost groups without using price, and quarantines development/test-history collisions. `scripts/prepare_evaluation.py` requires an explicit preservation policy for consolidated datasets and verifies the historical manifest. Existing feature semantics and frozen artifacts were retained.
+
+Measured preparation: 808 observations become 804 unique IDs after four cross-batch repeats. There are 630 candidates and 567 candidates with cached price agreement, of which 150 are Corolla, 99 City, 143 Civic, and 175 Alto. The new batch contributes 497 candidates, all price-checked. Sixty-three other combined candidates lack checked prices. The checked set has four two-row possible-repost groups, 69 family/variant combinations, and 55 cities; 34 combinations and 41 cities have three or fewer rows. Eight rows have unspecified variants and eight have missing body type. Registration remains deferred. Raw data and original prepared/evaluation files are unchanged.
+
+Historical evaluation: one repeated ID belonged to the old reserved test. All 72 earlier listing partitions/folds are preserved, including all 15 reserved test IDs. No historical development/test group collision occurred. New groups alone receive the seeded family-stratified 20% reservation. Split `pilot_eval_bd6a4b5542b06eed` has 453 development rows in three 151-row folds, training on 302 each time, and 114 reserved test rows. Twenty-two validation rows have unseen variants. This mixed-period population is not a chronological generalization test.
+
+Experiment `m3_modeling_002_raw_pkr_v1`: reused the first experiment's fixed raw-PKR parameters, with no tuning, target transforms, clipping, or final-test scoring. Twelve combinations and 36 fits produce 5,436 held-out development predictions.
+
+| Candidate | F0 development MAE PKR | F1 development MAE PKR | F2 development MAE PKR |
+|---|---:|---:|---:|
+| Comparable median | 458,508 | 458,508 | 458,508 |
+| Ridge | 664,404 | 514,366 | 471,210 |
+| Random Forest | 379,448 | 337,868 | 311,639 |
+| CatBoost | 369,645 | 347,553 | 314,476 |
+
+Random Forest F2 is 32.0% below the baseline on pooled MAE. Its family MAEs are PKR 321,020 for City over 79 rows, 360,288 for Civic over 114, 180,406 for Alto over 140, and 412,351 for Corolla over 120. Each is below the corresponding baseline. CatBoost F2 is only about 0.9% behind overall. These support a provisional tree-model shortlist, not a final algorithm or support decision. The changed population prevents interpreting the first-to-second comparison as a controlled learning curve. Ridge F0 produced two nonpositive predictions; no predictions were clipped. There were no fit warnings.
+
+Largest-error review: all 60 core comparisons and ten main-price/offer agreements passed for the ten largest Random Forest F2 misses. Four unusually low prices are actually present in the snapshots; no explicit installment/down-payment wording was found in their seller comments. Their intended price meaning/seller truth is unresolved. Another advertisement describes Corolla Cross in comments while structured identity/title resolve to Corolla. A high-priced 2013 Corolla's seller explicitly defends the price. There are also sparse/unseen inputs and unexplained variation. These findings are preserved as review flags; no guessed zeros, silent family reassignment, or score-driven row deletion occurred. Subjective condition text was not added as a feature.
+
+Verification: 58 behavioral tests pass with HTTP blocked, including seven new consolidation/history tests and a preparation/evaluation round trip. Checks cover latest selection, immutable observations, historical spec links, test propagation, collision quarantine, catalogue evidence, deterministic splits, output hashes, overwrite refusal, and parent tampering. Real preparation/comparison ran with HTTP blocked. Dataset/source/code/report/output fingerprints were rechecked. All 114 test IDs are absent from predictions and all 72 original partitions/folds remain intact. No live collection, saved predictor, demo implementation, final-test outcome, or production change occurred.
+
+Artifacts: `data/processed/modeling_combined_002_v1/`, `data/processed/modeling_combined_002_eval_v1/`, `reports/pilot/modeling_combined_002_v1/`, `reports/pilot/m3_modeling_002_v1/`, `reports/pilot/m3_modeling_002_review_v1/`, updated private `model_selection.md`, and [tracked review/reproduction](docs/modeling-batch-002-review.md). Next work is flagged-label resolution, individual feature-group ablations, and declared support/error criteria before demo qualification. Keep all reserved model outcomes closed.
+
+### J018: recording confirmed bad labels and handing source cases to the user
+
+Date: 21 October 2026. Stage: source-quality review. Status: two exclusions recorded/enforced; other review decisions pending.
+
+The user explicitly confirmed the previously shown 2026 Alto at PKR 300,000 and 2014 City at PKR 295,000 are wrong entries and must be excluded from future training/development. Recorded listing IDs `12137528` and `12137467` in `configs/manual_reviews.json` as user-confirmed exclusions, without inventing replacement prices or deleting source evidence. The user requested the full flagged-case list for in-chat keep/exclude decisions. Registration year is now explicitly metadata only, outside all model inputs; it is not a substitute for advertised model year or a verified manufacturing date.
+
+Implementation: `pilot/reviews.py` validates explicit decisions, applies exclusions to new derived copies and their possible-repost groups, and rejects a stale modeling population containing excluded IDs. The evaluation loader uses that guard, so the existing combined dataset cannot accidentally be reused for another comparison without preparation of a reviewed version. Combined preparation records the review-file hash and exclusion reasons in its manifest/decision report. A keep decision never overrides other quality/scope failures.
+
+Review handoff: private `reports/pilot/source_review_2026-10-21/` binds a twelve-case worksheet to source/experiment hashes. It includes the ten largest forest validation misses and two additional displayed-versus-structured price-precision disagreements already excluded by preparation. Two cases have a confirmed exclude decision; the remaining decisions are pending. Source links, saved prices, advertised years, mileage, cities, and review reasons are available for the user's review. A large model error alone is not treated as evidence of a wrong entry. One precision case is also outside the 2010-2026 scope.
+
+Verification: 62 tests pass with HTTP blocked. Four new tests cover explicit exclusion/group propagation without raw/target changes, keep decisions retaining other exclusions, stale-population refusal, decision validation, and registration fields being absent from all F0-F2 model inputs. A direct offline loader check confirms the current combined development population is refused for the two rejected IDs. Raw/prepared/evaluation/experiment files remain preserved. No new dataset, fold assignment, year ablation, model training, final-test outcome, or live collection was produced. The previous metrics remain historical results that included the now-rejected labels.
+
+Next work: accept the user's remaining review decisions, apply them in a new dataset/evaluation version with historical test protection, then continue the model-year/feature-group comparison. Registration features will not be added. Existing data counts and model scores must not be presented as results of a cleaned/retrained population.
+
+### J019: accepting source-review decisions and the confirmed mileage correction
+
+Date: 21 October 2026. Stage: user source-quality review. Status: decisions recorded and preparation logic verified; new dataset/evaluation/training pending.
+
+The user accepted cases 6, 7, 8, 9, 10, and 11 and excluded cases 1-5 and 12. Recorded all twelve listing decisions in `configs/manual_reviews.json`. Case 8's initial text `100,00` was ambiguous; the user explicitly clarified 100,000 km. Its corrected mileage is therefore 100,000, with the original 100 km preserved in source evidence and `manual_updates`. Case 11 explicitly accepts displayed PKR 2,800,000 despite the structured value 2,799,999. Case 6 is retained as requested with advertised identity and the existing Corolla/Cross ambiguity note; no new family mapping was supplied or invented. Registration year remains metadata only.
+
+Implementation: extended manual-review validation/application to support the explicitly confirmed mileage from/to correction and exact displayed/structured price-pair acceptance. Price acceptance requires matching saved evidence and does not override unrelated quality/scope exclusions. `source_price_verified` remains false for case 11; `manual_price_accepted` separately records the human decision. The population loader accepts that declared checked-by-review status without pretending exact source agreement. Corrections are applied before cross-batch regrouping. Stale populations containing excluded IDs or the old mileage are refused before modeling. Raw files and prior datasets/evaluation/metrics remain unchanged.
+
+Verification: 64 tests pass with HTTP blocked. Added behavioral coverage for repeatable mileage correction, original-value preservation, stale-correction refusal, exact evidence-pair acceptance, missing/mismatched evidence rejection, and preservation of other exclusion reasons. A local application preview confirms six keep and six exclude decisions, the 100,000 km correction, and explicit source disagreement versus manual price acceptance. Preview counts are 626 candidates and 563 checked-or-user-accepted rows; these are not a newly generated training dataset or retrained scores.
+
+Artifacts: `reports/pilot/source_review_decisions_2026-10-21/` preserves the completed worksheet and review-file hash; the original pending worksheet remains unchanged. No live collection, new split, model fit, year ablation, or test outcome was produced. Next work: build a reviewed dataset version and preserve the current reserved-test history before reevaluating or testing year/feature groups.
+
+### J020: rebuilding the reviewed dataset while preserving evaluation history
+
+Date: 21 October 2026. Stage: reviewed M2 dataset/evaluation preparation. Status: rebuild complete; retraining not run.
+
+The user requested the rebuild after confirming the J019 decisions. Created `modeling_combined_002_v2` from the existing saved batches and `modeling_combined_002_eval_v2` using the larger v1 evaluation as its history parent. All six rejected IDs remain in preserved evidence but are absent from evaluation. Case 8 now uses 100,000 km with its original 100 km recorded in `manual_updates`. Case 11 retains displayed PKR 2,800,000 through explicit acceptance of the saved 2,799,999 structured-price disagreement; it remains distinguishable from exact source agreement. Registration stays metadata only.
+
+Measured results: 808 normalized batch observations consolidate to 804 unique listing IDs, 626 candidates, and 563 eligible rows: 562 exact-price agreements and one manual price acceptance. The previous 567 eligible rows lose five rejected rows and gain case 11; the sixth rejection was already outside scope. Another 63 candidates still lack checked or accepted prices. Eligible families total Corolla 149, City 98, Civic 142, and Alto 174.
+
+Evaluation preservation: split `pilot_eval_f87fae24bb5634f0` has 449 development rows in folds of 150, 150, and 149, with all 114 larger-parent reserved test IDs, targets, and F2 inputs unchanged. Every surviving historical development record keeps its validation fold. Reinstated case 11 enters development only; no reviewed result selects a new holdout. The explicit `development_only` configuration handles a single reinstatement or no new groups without reallocating history. Training would use 299 or 300 development rows per fold run.
+
+Implementation and verification: froze the review file in the dataset, recorded creation time and separate exact-agreement/manual-acceptance counts, and clarified report eligibility wording. All 66 behavioral tests pass with HTTP blocked, including tiny/empty reinstatement populations, deterministic target-independent placement, exclusions, and preserved assignments. Actual F0-F2 loaders agree on 449 development IDs/folds, corrected mileage, and absence of registration inputs. Artifact/configuration/code/report fingerprints match; historical dataset, evaluation, and comparison hashes remain unchanged.
+
+Artifacts and reproduction: [reviewed rebuild report](docs/reviewed-dataset-rebuild.md), `configs/evaluation_modeling_002_reviewed.json`, private dataset/evaluation directories above, and `reports/pilot/modeling_combined_002_v2/`. No live collection, model fit, new prediction, or model metric was produced. The historical forest/CatBoost scores do not apply to this reviewed population. Proposed next work is the fixed development comparison and named year/feature-group experiments, keeping reserved model outcomes closed.
+
+### J021: rerunning the fixed model matrix on reviewed development data
+
+Date: 21 October 2026. Stage: M3 reviewed comparison. Status: comparison complete; year/individual feature ablations and demo qualification pending.
+
+The user requested a model rerun after the reviewed rebuild. Added `configs/experiments_modeling_002_reviewed.json` with experiment ID `m3_modeling_002_reviewed_raw_pkr_v1`, preserving the previous run's algorithm parameters, seed 42, raw-PKR target, and F0-F2 matrix. Used dataset `modeling_combined_002_v2` and split `pilot_eval_f87fae24bb5634f0`. No tuning, feature implementation, new collection, or further review decision was introduced.
+
+Measured results: completed 12 combinations and 36 development fits on 449 listings, with 5,388 predictions. Each fit trains on 299 or 300 rows and validates on 150 or 149. Pooled MAE is PKR 434,057 for the median baseline, 437,679 for Ridge F2, 280,359 for Random Forest F2, and 266,885 for CatBoost F2. CatBoost leads overall, 38.5% below baseline and about 4.8% below forest. Both tree candidates beat baseline in all three folds; CatBoost beats forest in two. CatBoost fold MAEs range from PKR 247,815 to 295,329, versus forest 270,540 to 286,549. CatBoost median absolute error is PKR 208,454 and median absolute percentage error 5.6%; these are not accuracy guarantees. Total recorded fit time is 118.43 seconds.
+
+Subgroups and feature evidence: CatBoost family MAEs are City PKR 225,172 on 78 rows, Civic 372,417 on 113, Alto 142,225 on 139, and Corolla 339,627 on 119. Each beats its family baseline; forest has lower Civic MAE of 335,852. CatBoost's 22 unseen-variant rows have MAE 400,767 versus 259,988 on the other 427. CatBoost F0/F1/F2 MAEs are 332,692/305,299/266,885; forest values are 332,546/291,769/280,359. These compare nested feature groups, not isolated year or individual F2 attributes. The accepted case 6 remains the largest CatBoost miss, about PKR 1,951,621; its keep decision and source identity ambiguity remain preserved.
+
+Verification: HTTP blocked for the run and six focused model/comparison tests, all passing. Independently recomputed all twelve summaries from predictions, verified fold assignments and listing/group isolation for every fit, and confirmed no rejected or reserved-test IDs in training/validation/predictions. Confirmed corrected 100,000 km mileage, accepted case 11, identical F0-F2 membership, and no registration inputs. No fit warnings were captured. F2 tree predictions were positive; Ridge F0 produced two nonpositive predictions. Input/configuration/code/output hashes match, and historical data/evaluation/comparison artifacts remain unchanged.
+
+Interpretation: the previous forest/CatBoost MAEs of PKR 311,639/314,476 belong to different membership and inputs. Cross-version changes are descriptive, not a controlled estimate of cleaning's effect. Reviews were prompted partly by prior development errors; the ranking remains exploratory. CatBoost and forest remain provisional, with Civic and sparse-variant tradeoffs. All 114 reserved test records stay unopened for model outcomes. Fold estimators were discarded; no saved inference predictor exists.
+
+Artifacts: private `reports/pilot/m3_modeling_002_reviewed_v1/` contains configuration, environment, predictions, fold/subgroup metrics, fitted details, report, and manifest. Updated the private current `model_selection.md` pointer and [tracked comparison/reproduction](docs/reviewed-model-comparison.md). Next work is named model-year/individual feature-group ablations, then support/error criteria before freezing a demo candidate.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -332,6 +430,8 @@ Use an ID to connect each hurdle to its investigation, fix, and later verificati
 | H018 | Generic placeholder handling erased meaningful unknown registration semantics | Preparation regression failed during development | Restrict category missingness rules; supersede v1 with v2; J013 | Fixed; metadata preservation test passes |
 | H019 | Checked population is too small for stable family-level evaluation | J014 leaves only 3–4 reserved test groups per family and 38 training records per fold | Treat comparisons as exploratory, report counts, and deepen coverage before demo claims | Open; fixed splits do not solve the sample-size limit |
 | H020 | Aggregate improvement hides subgroup and generation gaps | J015: CatBoost F2 improves overall MAE by 37.3%, but Alto MAE is 17.6% worse than baseline; large misses include unseen trims and out-of-training-range years | Deepen scoped coverage and reevaluate support; do not qualify all four families from pooled MAE | Open; observed in exploratory development evaluation |
+| H021 | Recollection could leak earlier reserved vehicles into development | Four repeated IDs in J017, including one reserved test ID | Latest-observation consolidation preserves history and groups; collisions quarantine | Implemented and verified; all prior partitions/folds unchanged |
+| H022 | Source agreement does not establish full-price meaning or correct seller identity | J017 largest errors include source-confirmed unusually low prices and Corolla/Cross contradiction | J019 decisions applied in J020: six rejects, six keeps, explicit mileage correction and price acceptance; preserve source ambiguity | Review decisions implemented; no final candidate qualified |
 
 When a hurdle is solved, record the actual code/data change, date, verification, and story entry. Do not change `Open` to `Resolved` merely because a proposed fix has been written down.
 
@@ -361,6 +461,11 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D020 | Share unfitted feature rules and explicit missing conventions across training/prediction | Avoid input drift, silent trim substitutions, and price/metadata leakage | Implemented in J014; fitted preprocessing remains inside future training folds |
 | D021 | Run one fixed raw-PKR configuration per algorithm before tuning | Establish a bounded initial comparison without selecting lucky trials or using final-test outcomes | Implemented in J015; any later trials need named configurations |
 | D022 | Keep the M3 shortlist provisional and deepen coverage before demo qualification | Tiny overall CatBoost/Forest difference and worse Alto baseline comparison do not support a final algorithm/support decision | Accepted after J015; reserved test stays closed |
+| D023 | Select the latest observation per ID and preserve historical grouping/evaluation status | Cross-batch repeats must not double-count vehicles or move old development into an untouched test | Implemented in J017; original artifacts preserved |
+| D024 | Keep suspicious source-confirmed prices and identity contradictions visible for explicit review | A large validation error is not proof of a parser mistake or permission to invent a target | J017 flags retained; quality/candidate policy pending |
+| D025 | Exclude user-confirmed bad listing IDs from future model populations while preserving evidence | J018 initial rejects expanded to six explicit rejects in J019 | Persistent review file and preparation/loader enforcement implemented; reviewed dataset/evaluation rebuilt in J020 |
+| D026 | Keep registration year as metadata only, separate from all model inputs | Explicit user instruction in J018; model year and registration are different facts | Accepted; registration/registration-gap features excluded rather than awaiting an F3 experiment |
+| D027 | Preserve the larger evaluation's holdout and surviving folds during the reviewed rebuild | Review outcomes must not move used development records into an untouched test | Implemented in J020; reinstated case 11 enters development only; 114 test records unchanged |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -415,12 +520,13 @@ The handbook records a different checksum for its recovered original scraper. By
 | Legacy sample S001 | 1 October 2026 | Car listings in current CSVs | Not available | 10 | Not measured | User-reported collection; current files inspected |
 | field_validation_2026-10-01 | 1 October 2026 | Same ten car listing IDs, extended attributes | 10 successful detail requests; 4 initial inspection and 6 manifest-recorded | 10 refreshed observations; 0 new listing IDs | Not measured | Cached HTML checksums, batch manifest, integrity audit, J009 |
 | pilot_batch_001 | 1-2 October 2026 | Four family quotas plus general discovery | Latest run: 5 search and 114 detail requests, all successful; earlier failed run retained | 200 cumulative rows; 199 complete; 180 complete quota matches | 137 candidate groups; 72 source-checked groups under conservative exact-specification rule | J012 collection accounting; J013 cached evidence and derived dataset v2 |
+| modeling_batch_002 | 16-17 October 2026 | Four broad searches and targeted year/city gaps | 14 user-run chunks; 293 search and 627 detail requests | 608 cumulative IDs; 606 complete; 571 complete quota matches | 497 checked candidates before cross-batch consolidation; joint groups in J017 | Saved collection manifests/logs, full current-row cached evidence, combined dataset and review |
 
 For future batches add discovery/detail request counts, duplicates, access stops, ordinary failures, incomplete rows, exclusion counts, review sample size, actual discrepancies, elapsed time, and dataset checksum. Distinguish newly added rows from cumulative totals.
 
 ### Model experiment ledger
 
-J015 records the first model experiment. Metrics below are pooled held-out development errors over 57 listings, not final-test results.
+J015 records the first model experiment over 57 development listings; J017 records the larger comparison over 453; J021 reruns the fixed matrix on 449 reviewed development listings. Metrics below are pooled held-out development errors for each labeled dataset, not final-test results.
 
 When experiments run, record:
 
@@ -430,6 +536,14 @@ When experiments run, record:
 | m3_initial_raw_pkr_v1 / ridge_F2 | Same frozen dataset/split | F2 | Ridge alpha 10, SVD; fold-only pipeline | 507,766 | Not run | Cheap benchmark retained |
 | m3_initial_raw_pkr_v1 / random_forest_F2 | Same frozen dataset/split | F2 | 300 trees, minimum leaf 2, seed 42 | 495,765 | Not run | Exploratory shortlist |
 | m3_initial_raw_pkr_v1 / catboost_F2 | Same frozen dataset/split | F2 | 300 iterations, depth 4, learning rate 0.05, RMSE, seed 42 | 492,904 | Not run | Lowest pooled MAE; Alto gap blocks broad qualification |
+| m3_modeling_002_raw_pkr_v1 / median_F0 | modeling_combined_002_v1 / pilot_eval_bd6a4b5542b06eed | F0 grouping subset | Same median parameters as initial comparison | 458,508 | Not run | Larger-population baseline |
+| m3_modeling_002_raw_pkr_v1 / ridge_F2 | Same larger dataset/split | F2 | Same fixed Ridge configuration | 471,210 | Not run | Does not beat baseline overall |
+| m3_modeling_002_raw_pkr_v1 / random_forest_F2 | Same larger dataset/split | F2 | Same fixed forest configuration | 311,639 | Not run | Provisional lowest pooled MAE; labels/support pending |
+| m3_modeling_002_raw_pkr_v1 / catboost_F2 | Same larger dataset/split | F2 | Same fixed CatBoost configuration | 314,476 | Not run | Provisional close alternative |
+| m3_modeling_002_reviewed_raw_pkr_v1 / median_F0 | modeling_combined_002_v2 / pilot_eval_f87fae24bb5634f0 | F0 grouping subset | Same fixed median configuration | 434,057 | Not run | Reviewed population baseline |
+| m3_modeling_002_reviewed_raw_pkr_v1 / ridge_F2 | Same reviewed dataset/split | F2 | Same fixed Ridge configuration | 437,679 | Not run | Does not beat baseline overall |
+| m3_modeling_002_reviewed_raw_pkr_v1 / random_forest_F2 | Same reviewed dataset/split | F2 | Same fixed forest configuration | 280,359 | Not run | Provisional alternative; lower Civic MAE |
+| m3_modeling_002_reviewed_raw_pkr_v1 / catboost_F2 | Same reviewed dataset/split | F2 | Same fixed CatBoost configuration | 266,885 | Not run | Lowest pooled reviewed development MAE; qualification pending |
 
 Include fold variability, median error, subgroup counts/errors, training time, and artifact references in the associated story entry. Label exploratory, selected, rejected, and superseded experiments explicitly. A final-test metric is `Not run` until the frozen candidate is evaluated.
 
@@ -444,6 +558,9 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J012 records completion of all field-pilot quotas. J013 reviews cached evidence, fixes two extraction issues, and exports versioned candidate datasets; thirty-six behavioral tests and both parser self-tests pass offline.
 - J014 implements shared F0–F2 preparation and freezes 57 development/15 test records with three 19-record folds. Forty-five behavioral tests pass with HTTP blocked; no model metrics exist.
 - J015 runs 12 development comparisons with training-fold-only preprocessing and reviews the largest misses. Best pooled MAE is PKR 492,904, with sparse coverage and an Alto subgroup regression. Fifty-one behavioral tests pass; final test remains unopened.
+- J017 consolidates the deeper user batch into 567 checked candidates, preserves historical evaluation, and compares 12 combinations on 453 development rows. Random Forest F2 MAE is PKR 311,639; source-price/identity questions remain before qualification. Fifty-eight tests pass and test outcomes remain unopened.
+- J020 applies all twelve user review decisions in a new 563-row eligible population: 449 development and the same 114 reserved test records. Case 8 is corrected to 100,000 km; case 11 has explicit price acceptance. Sixty-six tests pass; reviewed-v2 training and scores remain pending.
+- J021 completes the reviewed 12-combination comparison with 36 fits. CatBoost F2 leads with MAE PKR 266,885 versus Forest 280,359 and baseline 434,057. Six focused tests and independent prediction/metric/isolation checks pass; all reserved-test outcomes remain unopened.
 - A local prediction demo, saved qualified predictor, final-test result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -451,7 +568,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J016: <specific event or milestone>
+### J022: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 
