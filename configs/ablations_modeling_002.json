@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "experiment_id": "m3_modeling_002_ablation_v1",
+  "base_feature_set": "F2",
+  "target": "raw_pkr",
+  "seed": 42,
+  "candidates": {
+    "catboost": {"iterations": 300, "depth": 4, "learning_rate": 0.05, "loss_function": "RMSE"},
+    "random_forest": {"n_estimators": 300, "min_samples_leaf": 2, "max_features": 1.0}
+  },
+  "remove_individually": ["listing_city", "year", "mileage_km", "variant", "fuel", "transmission", "engine_cc", "assembly", "body_type"],
+  "max_mae_increase_pct": {"overall": 1.0, "fold": 3.0, "family": 5.0},
+  "reference_tolerance_pkr": 0.01,
+  "note": "Independent removals from full F2. Keep make/model and all development memberships. City removal across the shortlist requires both models to pass every limit. Passing removals are candidates only, not a combined schema. Registration and reserved-test outcomes are excluded."
+}

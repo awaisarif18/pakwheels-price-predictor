@@ -24,3 +24,7 @@ Complete the manual worksheet before treating identity or training eligibility a
 `modeling_combined_002_v2/` contains the rebuilt evidence/quality reports applying user decisions. `source_review_decisions_2026-10-21/` preserves the completed review worksheet. See [the rebuild record](../../docs/reviewed-dataset-rebuild.md).
 
 `m3_modeling_002_reviewed_v1/` contains the completed reviewed comparison: 12 combinations, 36 development fits, and 449 predictions per combination. CatBoost F2 MAE is PKR 266,885; Forest F2 is 280,359; baseline is 434,057. The 114 reserved test records were not scored. See [the reviewed comparison](../../docs/reviewed-model-comparison.md).
+
+`m3_modeling_002_ablation_v1/` contains 20 feature configurations, 60 fits, and 8,980 development predictions, plus paired reference checks, subgroup deltas, and the predeclared removal decision table. City removal improves pooled MAE but fails fold/family safeguards; fuel and body type qualify individually across both models. See [the experiment record](../../docs/feature-removal-experiment.md). No reduced schema or reserved-test outcome was produced.
+
+`m3_modeling_002_combined_ablation_v1/` contains the four-configuration, 12-fit fuel/body-type confirmation. Both models pass the existing overall/fold/family limits: CatBoost MAE PKR 252,692 and forest 278,531. The 114 reserved test records remain unused for model outcomes. See [the combined confirmation](../../docs/combined-feature-removal.md).

@@ -51,3 +51,7 @@ The executed run blocked HTTP around the existing offline comparison. Reproduce 
 The completed run is in `reports/pilot/m3_modeling_002_reviewed_v1/`, including predictions, fold/subgroup metrics, fitted preprocessing details, environment, configuration, report, and manifest. The current private selection summary is `reports/pilot/model_selection.md`.
 
 Next run named model-year and individual feature-group ablations on these same development folds, then define supported inputs and acceptable errors before freezing and saving a demo candidate. Keep registration outside all inputs and the reserved test closed during selection.
+
+J022 update, 21 October 2026: [independent feature removals](feature-removal-experiment.md) are complete. Both references reproduce exactly. City removal improves pooled MAE but fails predeclared fold/family limits. Fuel and body type are individual removal candidates across both models; combined removal remains untested. No feature contract or reserved-test outcome changed.
+
+J023 update, 21 October 2026: [joint fuel/body-type removal](combined-feature-removal.md) now passes both shortlisted models under unchanged safeguards. Reduced CatBoost MAE is PKR 252,692 and forest 278,531. City stays included. Reduced inference contract/support criteria remain pending; no saved predictor or reserved-test outcome was produced.

@@ -90,13 +90,15 @@ def held_out_rows(data, metadata, frame, train, validation, estimates, experimen
     return records
 
 
-def compare_candidate(data, metadata, feature_set: str, name: str, parameters: dict, seed: int):
-    frame = input_frame(data.inputs, feature_set)
+def compare_candidate(data, metadata, feature_set: str, name: str, parameters: dict, seed: int,
+                      *, columns=None, experiment_id=None):
+    frame = input_frame(data.inputs, feature_set, columns=columns)
     targets = np.asarray(data.targets, dtype=float)
-    experiment = f"{name}_{feature_set}"
+    experiment = experiment_id or f"{name}_{feature_set}"
     predictions, fold_results, details = [], [], []
     for fold, train, validation in fold_indices(data):
-        model = build_candidate(name, feature_set, parameters, seed)
+        model = (build_candidate(name, feature_set, parameters, seed) if columns is None else
+                 build_candidate(name, feature_set, parameters, seed, columns=columns))
         with warnings.catch_warnings(record=True) as captured:
             warnings.simplefilter("always")
             started = perf_counter()
@@ -109,6 +111,7 @@ def compare_candidate(data, metadata, feature_set: str, name: str, parameters: d
         fold_results.append({"experiment": experiment, "fold": fold, "training_rows": len(train),
                              **metrics, "fit_seconds": fit_seconds, "predict_seconds": predict_seconds})
         details.append({"experiment": experiment, "fold": fold,
+                        "input_columns": list(frame.columns),
                         "training_ids": [data.listing_ids[i] for i in train],
                         "validation_ids": [data.listing_ids[i] for i in validation],
                         "warnings": [str(item.message) for item in captured],

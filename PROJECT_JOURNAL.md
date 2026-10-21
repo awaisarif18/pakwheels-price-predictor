@@ -25,7 +25,7 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 21 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Sixty-six offline tests pass with HTTP blocked; no live collector launched during J017-J020 |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Seventy-six offline tests pass with HTTP blocked; no live collector launched during J017-J023 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
 | Deeper modeling collection | User saved 608 unique IDs, 606 complete rows, and 571/600 assigned matches | Nine quotas met; two configured searches exhausted; stop unchanged plan |
@@ -33,15 +33,15 @@ Update this file as part of future project work; its creation does not establish
 | Make/model/variant normalization | Derived combined catalogue preserves 94 observed labels | 37 evidence-backed additions; user keeps the advertised Corolla identity despite the preserved Corolla/Cross ambiguity |
 | Dataset preparation | Reviewed v2 exports 808 observations, 804 unique IDs, 626 candidates, and 563 eligible rows | J020 applies all review decisions: 562 exact-price agreements plus one explicit user acceptance; case 8 corrected to 100,000 km |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
-| Feature selection | Shared F0–F2 inputs compared with training-fold-only preprocessing | Registration year remains metadata only by explicit J018 instruction; feature-group ablations remain |
+| Feature selection | Individual removals and joint fuel/body-type confirmation complete | Pair passes all safeguards for both trees; recommend omitting both from next candidate; keep city; registration excluded |
 | Evaluation membership | Reviewed v2 has 449 development records in folds of 150, 150, and 149; 114 reserved test records | Split ID `pilot_eval_f87fae24bb5634f0`; surviving parent folds and all 114 test records preserved |
-| Algorithm selection | Reviewed comparison complete; CatBoost F2 leads provisionally | Development MAE PKR 266,885 versus Forest F2 280,359 and comparable median 434,057; Forest is better on Civic |
-| Model training and evaluation | Reviewed run completed 12 combinations and 36 development fits | 449 held-out predictions per combination; year/feature ablations pending; no final-test result or saved predictor |
+| Algorithm selection | Reduced CatBoost remains provisional overall leader | Joint-removal MAE PKR 252,692 versus forest 278,531; forest has lower Civic MAE; inference/support contract pending |
+| Model training and evaluation | J023 adds four configurations, 12 fits, and 1,796 development predictions | Pair improves MAE 5.32% for CatBoost and 0.65% for forest; no final-test result or saved predictor |
 | Local demo | Planned | Follows the data/modeling pilot |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next work: named model-year/individual feature-group experiments on the reviewed v2 development folds, followed by explicit demo support/error criteria and a frozen candidate. J021 completes the fixed comparison; its metrics supersede historical v1 rankings for current selection. Keep all 114 reserved test outcomes closed during selection. Registration year stays separate from all inputs. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
+Next proposed work: freeze the reduced candidate's inference contract and supported scope/error criteria, then save and evaluate a frozen demo predictor. J023 supports removing fuel/body type together from the next candidate; current F0-F2 artifacts remain preserved. Retain city under the agreed safeguards. Keep all 114 reserved test outcomes closed during selection. Registration year stays separate from all inputs. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
 
 ## 3. The project story so far
 
@@ -404,6 +404,40 @@ Interpretation: the previous forest/CatBoost MAEs of PKR 311,639/314,476 belong 
 
 Artifacts: private `reports/pilot/m3_modeling_002_reviewed_v1/` contains configuration, environment, predictions, fold/subgroup metrics, fitted details, report, and manifest. Updated the private current `model_selection.md` pointer and [tracked comparison/reproduction](docs/reviewed-model-comparison.md). Next work is named model-year/individual feature-group ablations, then support/error criteria before freezing a demo candidate.
 
+### J022: implementing and running independent feature removals
+
+Date: 21 October 2026. Stage: M3 feature selection. Status: all 60 fits complete and independently verified; no reduced schema adopted.
+
+The user requested implementation of the agreed experiment and suspected city has little price impact. Before results, they selected both CatBoost and Random Forest and permitted removal candidates only when MAE rises no more than 1% overall, 3% in every fold, and 5% in every family. City must pass both models to qualify across the shortlist. The same rule applies to all nine independent removals. Each removal starts from full F2, preserving make/model, reviewed rows/targets/groups/folds, seed 42, and previous model parameters. Registration remains metadata only.
+
+Implementation: added a dedicated offline runner/configuration and paired decision/report module. Optional ordered column subsets in model/frame construction select inputs before preprocessing/estimation; default F0-F2 behavior and the frozen feature contract remain intact. Reporting retains omitted fields as metadata for subgroup analysis. Invalid, duplicate, empty, or leaking column selections are rejected. Historical reference hashes/settings are verified before fitting; both new full-F2 references must reproduce each previous prediction and PKR metric within PKR 0.01 before removals. Outputs cannot overwrite prior results or overlap inputs/raw data.
+
+Measured run: experiment `m3_modeling_002_ablation_v1` uses `modeling_combined_002_v2` and split `pilot_eval_f87fae24bb5634f0`. Completed 20 configurations, 60 fits, and 8,980 held-out development predictions on the unchanged 449 records. Both full references reproduce exactly, with zero prediction and metric differences. Total recorded fit time is 381.32 seconds. No fit warnings or nonpositive predictions were recorded. All 114 reserved test records stay outside fits and predictions.
+
+City evidence: removing city changes CatBoost MAE from PKR 266,885 to 262,085, down 1.80%, and forest from 280,359 to 279,668, down 0.25%. This supports limited pooled benefit under the tested settings. Neither qualifies under all predeclared limits: CatBoost fold 1 rises 3.16%, over the 3% fold cap; forest Alto MAE rises from 156,328 to 167,814, up 7.35%, over the 5% family cap. CatBoost city-removal family changes are City +4.30%, Civic -3.87%, Alto +4.81%, Corolla -5.52%. Forest changes are -1.74%, -1.46%, +7.35%, -2.20%. Keep city provisionally; no threshold was relaxed after seeing results. These fixed-seed results do not prove a causal effect or broad importance of city.
+
+Other inputs: removing advertised model year worsens MAE 64.90% for CatBoost and 59.74% for forest, supporting its retention. Fuel and body type qualify individually for both models. CatBoost without fuel has MAE PKR 259,957 and without body type 261,597. Forest additionally qualifies mileage and assembly; its best single removal is mileage, MAE PKR 273,885. Variant, transmission, displacement, and year fail safeguards in both models. Several removals improve pooled MAE while hurting a fold/family, illustrating why pooled error alone was insufficient. Individual passes do not establish that joint removal will pass.
+
+Verification: all 74 behavioral tests pass with HTTP blocked, including eight new tests covering actual input omission, leaking configurations, unrounded/zero-error limits, subgroup guards, reference mismatch, unchanged parameter requirements, full end-to-end assignments/group isolation, metadata retention, input preservation, and output/path protections. Independent post-run checks recompute all 20 summaries, all 60 fold metrics, and every decision from saved predictions. Every prediction's ID, target, fold, and group matches development history. Excluded IDs remain absent; case 8's 100,000 km correction and accepted case 11 remain intact. Current input/code/output and historical artifact fingerprints match.
+
+Artifacts: `configs/ablations_modeling_002.json`; private `reports/pilot/m3_modeling_002_ablation_v1/` with predictions, fold/subgroup metrics and deltas, ordered fitted inputs, reference checks, environment, configuration, and manifest; updated current private selection summary; [tracked methods/results/reproduction](docs/feature-removal-experiment.md). No new collection, cumulative removal, model input adoption, inference predictor, or final-test result was produced. Proposed next work is a bounded joint fuel/body-type confirmation, then input/support/error decisions before saving a demo candidate.
+
+### J023: confirming joint removal of fuel and body type
+
+Date: 21 October 2026. Stage: M3 combined feature confirmation. Status: all 12 fits complete and independently verified; reduced inference contract/support qualification pending.
+
+The user requested the combined check after J022 qualified fuel/body type individually for both models. Added configuration version 2 for this exact pair in the existing offline runner; version 1 retains its nine independent removals. The new configuration preserves seed 42, raw-PKR targets, full-F2 reference settings, reviewed dataset/split, and limits of 1% overall, 3% every fold, and 5% every family. City and all other F2 inputs stay included. No tuning, additional feature removal, new exclusion, source correction, or collection was introduced.
+
+Measured results: experiment `m3_modeling_002_combined_ablation_v1` uses `modeling_combined_002_v2` and split `pilot_eval_f87fae24bb5634f0`. Four configurations and 12 fits produce 1,796 development-only predictions on the same 449 rows. Both full references reproduce exactly. CatBoost MAE falls from PKR 266,885 to 252,692, a 5.32% improvement; forest falls from 280,359 to 278,531, a 0.65% improvement. Both pass all predeclared limits. Total recorded fit time is 79.25 seconds; no fit warnings or nonpositive predictions were recorded.
+
+CatBoost improves every fold and family: its worst fold change is -3.33% and worst family change -1.12%. Median absolute error is PKR 176,650 and median percentage error 5.04%. Its family MAEs are City PKR 211,250 on 78 rows, Civic 345,736 on 113, Alto 140,627 on 139, and Corolla 322,403 on 119. Forest's worst fold change is +1.35% and worst family change +0.23%, both within limits. Forest still has lower Civic MAE, PKR 334,694. Its median percentage error is 5.97% versus full-F2 5.95%, so not every metric improves.
+
+Decision supported by this run: recommend omitting fuel and body type together from the next candidate's inputs. Retain make/model, advertised model year, mileage, listing city, variant, transmission, displacement, and assembly. Registration stays excluded; stored fuel/body-type evidence remains preserved. No existing F0-F2 inference contract was replaced, no predictor was saved, and no supported scope was declared. Candidate contract and demo error criteria still need to be frozen before reserved-test evaluation.
+
+Verification: all 76 tests pass with HTTP blocked, including two new combined-configuration/end-to-end tests for exact pair validation, mixed-mode rejection, both omitted fields, retained metadata, correct counts/folds, input preservation, and output hashes. Independent post-run checks recompute all four summaries, all 12 fold metrics, and every decision. Predictions match development IDs/targets/groups/folds; every fit preserves listing/group isolation. Exclusions, case 8's 100,000 km correction, and accepted case 11 remain intact. All 114 reserved test IDs are absent from fits/predictions. Current input/code/output and historical artifact hashes match.
+
+Artifacts: `configs/ablations_modeling_002_combined.json`, private `reports/pilot/m3_modeling_002_combined_ablation_v1/`, updated current private selection summary, and [tracked methods/results/reproduction](docs/combined-feature-removal.md). Results remain exploratory development selection evidence. No final-test outcome exists. Next work is the reduced candidate contract, support/error criteria, and saved-predictor path.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -466,6 +500,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D025 | Exclude user-confirmed bad listing IDs from future model populations while preserving evidence | J018 initial rejects expanded to six explicit rejects in J019 | Persistent review file and preparation/loader enforcement implemented; reviewed dataset/evaluation rebuilt in J020 |
 | D026 | Keep registration year as metadata only, separate from all model inputs | Explicit user instruction in J018; model year and registration are different facts | Accepted; registration/registration-gap features excluded rather than awaiting an F3 experiment |
 | D027 | Preserve the larger evaluation's holdout and surviving folds during the reviewed rebuild | Review outcomes must not move used development records into an untouched test | Implemented in J020; reinstated case 11 enters development only; 114 test records unchanged |
+| D028 | Use predeclared 1% overall, 3% per-fold, and 5% per-family MAE limits for individual removals on both trees | User accepts a small tradeoff for fewer inputs; subgroup regressions must remain bounded | J022 complete: city does not qualify; fuel/body type qualify individually; joint confirmation follows in D029 |
+| D029 | Confirm fuel/body-type removal together under unchanged safeguards | Individual removals do not establish joint behavior; explicit user request | J023 passes on both models; recommend nine-input reduced candidate; inference contract/support still pending |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -544,6 +580,10 @@ When experiments run, record:
 | m3_modeling_002_reviewed_raw_pkr_v1 / ridge_F2 | Same reviewed dataset/split | F2 | Same fixed Ridge configuration | 437,679 | Not run | Does not beat baseline overall |
 | m3_modeling_002_reviewed_raw_pkr_v1 / random_forest_F2 | Same reviewed dataset/split | F2 | Same fixed forest configuration | 280,359 | Not run | Provisional alternative; lower Civic MAE |
 | m3_modeling_002_reviewed_raw_pkr_v1 / catboost_F2 | Same reviewed dataset/split | F2 | Same fixed CatBoost configuration | 266,885 | Not run | Lowest pooled reviewed development MAE; qualification pending |
+| m3_modeling_002_ablation_v1 / catboost_without_fuel | modeling_combined_002_v2 / pilot_eval_f87fae24bb5634f0 | F2 minus fuel | Same fixed CatBoost configuration | 259,957 | Not run | Best CatBoost single removal; passes safeguards; no schema adopted |
+| m3_modeling_002_ablation_v1 / random_forest_without_mileage_km | Same reviewed dataset/split | F2 minus mileage | Same fixed forest configuration | 273,885 | Not run | Best forest single removal; qualifies for this model only |
+| m3_modeling_002_combined_ablation_v1 / catboost_without_fuel_and_body_type | modeling_combined_002_v2 / pilot_eval_f87fae24bb5634f0 | F2 minus fuel/body type | Same fixed CatBoost configuration | 252,692 | Not run | Passes overall/fold/family limits; reduced candidate recommended |
+| m3_modeling_002_combined_ablation_v1 / random_forest_without_fuel_and_body_type | Same reviewed dataset/split | F2 minus fuel/body type | Same fixed forest configuration | 278,531 | Not run | Passes limits; lower Civic MAE than reduced CatBoost |
 
 Include fold variability, median error, subgroup counts/errors, training time, and artifact references in the associated story entry. Label exploratory, selected, rejected, and superseded experiments explicitly. A final-test metric is `Not run` until the frozen candidate is evaluated.
 
@@ -561,6 +601,8 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J017 consolidates the deeper user batch into 567 checked candidates, preserves historical evaluation, and compares 12 combinations on 453 development rows. Random Forest F2 MAE is PKR 311,639; source-price/identity questions remain before qualification. Fifty-eight tests pass and test outcomes remain unopened.
 - J020 applies all twelve user review decisions in a new 563-row eligible population: 449 development and the same 114 reserved test records. Case 8 is corrected to 100,000 km; case 11 has explicit price acceptance. Sixty-six tests pass; reviewed-v2 training and scores remain pending.
 - J021 completes the reviewed 12-combination comparison with 36 fits. CatBoost F2 leads with MAE PKR 266,885 versus Forest 280,359 and baseline 434,057. Six focused tests and independent prediction/metric/isolation checks pass; all reserved-test outcomes remain unopened.
+- J022 completes 60 feature-removal fits and 8,980 predictions with exact full-reference reproduction. City lowers pooled MAE but fails fold/family safeguards; fuel/body type qualify individually on both models. Seventy-four tests and independent metric/isolation/decision checks pass. No reduced schema or reserved-test outcome is produced.
+- J023 confirms joint fuel/body-type removal in 12 fits and 1,796 development predictions. CatBoost MAE is PKR 252,692 and forest 278,531; both pass unchanged safeguards. Seventy-six tests and independent checks pass. Reduced candidate contract/support and saved predictor remain pending; test outcomes stay closed.
 - A local prediction demo, saved qualified predictor, final-test result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -568,7 +610,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J022: <specific event or milestone>
+### J024: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 
