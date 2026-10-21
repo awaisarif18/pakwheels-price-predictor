@@ -1,5 +1,7 @@
 # Pilot model artifacts
 
-Save the selected model, fitted preprocessing, and experiment metadata here after qualification. Initial M3 candidates have been trained and scored within development folds, then discarded. No saved or qualified predictor exists yet. Generated artifacts are private and excluded from Git. See [the comparison](../../docs/pilot-model-comparison.md).
+`cars_demo_v1/` contains a trusted local CatBoost research candidate trained on the 449 development records, with native model, nine-input contract, frozen support/policy, catalogue, dependency versions, development metrics, four documented cases, and hashes. It failed final demo qualification; it is not a qualified predictor release.
 
-The next predictor uses the adopted [nine-input contract](../../configs/predictor_inputs_v1.json), ID `cars_reduced_v1`. Use `pilot.predictor_inputs` for shared input preparation, frames, and candidate construction. Fuel/body type and registration are excluded; city is retained. Save a copy of this contract with the future fitted artifact. See [usage and verification](../../docs/predictor-input-contract.md). Supported scope and acceptable errors remain pending.
+Use `scripts.predict --check-examples` to verify save/load behavior. General prediction serving requires the exact bundle's final evaluation to pass and is currently blocked. Generated models are private and excluded from Git.
+
+The adopted [input contract](../../configs/predictor_inputs_v1.json) excludes fuel/body type and registration while retaining city. See [the qualification report](../../docs/demo-qualification.md) for development-only support rules, frozen error limits, final results, and one-time test status. Preserve this candidate and all earlier experiment artifacts; further selection needs an independent holdout.

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "candidate_id": "cars_demo_candidate_v1",
+  "model": "catboost",
+  "parameters": {"iterations": 300, "depth": 4, "learning_rate": 0.05, "loss_function": "RMSE"},
+  "seed": 42,
+  "input_contract_id": "cars_reduced_v1",
+  "experiment": "catboost_without_fuel_and_body_type",
+  "baseline_experiment": "median_F0",
+  "baseline_min_group_size": 2,
+  "coverage": {"min_family_groups": 30, "min_variant_groups": 5, "min_family_year_groups": 5, "min_family_city_groups": 3, "required_folds": 3},
+  "errors": {"overall_mae_pkr": 350000, "median_ape_pct": 10.0, "minimum_baseline_improvement_pct": 10.0, "family_mae_pkr": {"Honda City": 300000, "Honda Civic": 450000, "Suzuki Alto": 200000, "Toyota Corolla": 400000}},
+  "development_min_supported_family_groups": 15,
+  "test_min_supported_rows": 15,
+  "test_min_supported_family_rows": 3,
+  "note": "Exploratory local-demo limits chosen from development evidence, not a market guarantee or per-car error bound. Coverage uses development attributes/groups only. Require all retained families to meet the same frozen error limits on supported test rows; never remove failing families or change limits after opening test outcomes."
+}

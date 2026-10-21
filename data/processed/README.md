@@ -11,3 +11,5 @@ Private derived datasets and evaluation artifacts live here. Preserve raw inputs
 - `modeling_combined_002_eval_v2/`: current reviewed evaluation, with 449 development rows in 150/150/149 folds and the same 114 reserved test rows. The [reviewed comparison](../../docs/reviewed-model-comparison.md) now has 36 completed development fits; test outcomes remain closed. See [the rebuild](../../docs/reviewed-dataset-rebuild.md).
 
 Commands refuse existing output directories. Use a new version when inputs or rules change. Initial M3 comparisons have fitted preprocessing within development folds; no saved or qualified predictor exists yet. See [the comparison](../../docs/pilot-model-comparison.md).
+
+J025 status: membership in `modeling_combined_002_eval_v2/` is unchanged, but its 114 test rows were evaluated once for the frozen saved candidate. The final demo gate failed. Original manifests are immutable historical snapshots; the authoritative opened-test usage record is under `data/manifests/test_usage/`. See [results and next-holdout requirements](../../docs/demo-qualification.md).

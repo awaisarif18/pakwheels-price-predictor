@@ -30,3 +30,5 @@ Complete the manual worksheet before treating identity or training eligibility a
 `m3_modeling_002_combined_ablation_v1/` contains the four-configuration, 12-fit fuel/body-type confirmation. Both models pass the existing overall/fold/family limits: CatBoost MAE PKR 252,692 and forest 278,531. The 114 reserved test records remain unused for model outcomes. See [the combined confirmation](../../docs/combined-feature-removal.md).
 
 `predictor_inputs_v1/` contains the adopted nine-input contract copy and verification record. All 449 real development inputs match the confirmed experiment; historical artifacts and the same 114 reserved test records remain preserved. See [the adopted input contract](../../docs/predictor-input-contract.md).
+
+`demo_qualification_v1/` freezes the candidate, pilot limits, and 18-variant development support. `demo_test_v1/` stores the one-time final results: all-114 MAE PKR 257,246, with only 36 within support and four final criteria failing. The saved research candidate is not released for prediction serving. Current test usage is tracked in `data/manifests/test_usage/`. See [the qualification report](../../docs/demo-qualification.md).

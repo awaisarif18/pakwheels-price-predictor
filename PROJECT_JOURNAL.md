@@ -25,7 +25,7 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 21 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Eighty-two offline tests pass with HTTP blocked; no live collector launched during J017-J024 |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Ninety-three offline tests pass with HTTP blocked; no live collector launched during J017-J025 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
 | Deeper modeling collection | User saved 608 unique IDs, 606 complete rows, and 571/600 assigned matches | Nine quotas met; two configured searches exhausted; stop unchanged plan |
@@ -34,14 +34,14 @@ Update this file as part of future project work; its creation does not establish
 | Dataset preparation | Reviewed v2 exports 808 observations, 804 unique IDs, 626 candidates, and 563 eligible rows | J020 applies all review decisions: 562 exact-price agreements plus one explicit user acceptance; case 8 corrected to 100,000 km |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
 | Feature selection | Adopted nine-input contract `cars_reduced_v1` for the next predictor | Fuel/body type removed from next-predictor preparation and model factories; city retained; registration excluded; historical F0-F2 preserved |
-| Evaluation membership | Reviewed v2 has 449 development records in folds of 150, 150, and 149; 114 reserved test records | Split ID `pilot_eval_f87fae24bb5634f0`; surviving parent folds and all 114 test records preserved |
-| Algorithm selection | Reduced CatBoost remains provisional overall leader | Joint-removal MAE PKR 252,692 versus forest 278,531; input contract adopted in J024; support/error criteria pending |
-| Model training and evaluation | J023 adds four configurations, 12 fits, and 1,796 development predictions | Pair improves MAE 5.32% for CatBoost and 0.65% for forest; no final-test result or saved predictor |
-| Local demo | Planned | Follows the data/modeling pilot |
+| Evaluation membership | Same 449 development rows and 114 test rows; frozen test scored once in J025 | Split `pilot_eval_f87fae24bb5634f0`; opened status tracked separately; no test row entered training |
+| Algorithm selection | Reduced CatBoost frozen and saved as research candidate | Final pilot qualification failed; no model/support/threshold change after test outcomes |
+| Model training and evaluation | Native model trained on 449; full-test MAE PKR 257,246 on 114 | Frozen support covers 36 test rows with MAE 286,633; four checks fail; independent future holdout required |
+| Local demo | Saved-candidate and prediction CLI implemented; serving blocked | 18 development-qualified variants; final demo gate failed; no interactive demo released |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next proposed work: declare supported scope/error criteria and freeze the model choice, then save and evaluate a frozen demo predictor using the adopted nine-input contract. J024 implements the user's fuel/body-type removal decision; city remains included, registration excluded, and historical F0-F2 artifacts preserved. Keep all 114 reserved test outcomes closed during selection. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
+Next proposed work: review weak coverage, particularly Civic/Alto, and obtain independent data and a genuinely new holdout before further model/support selection. J025 froze scope, limits, and CatBoost before training/saving and one-time test scoring. The gate failed, so prediction serving is blocked and the existing test is now opened evidence. Preserve all historical artifacts and the adopted nine inputs. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
 
 ## 3. The project story so far
 
@@ -450,6 +450,26 @@ Measured verification: all 82 tests pass with HTTP blocked, including six new te
 
 Artifacts: adopted configuration/module/tests, [input contract and usage](docs/predictor-input-contract.md), and private `reports/pilot/predictor_inputs_v1/` containing a frozen contract copy and verification record with input/code fingerprints. No live collection, new real-data model fit, new metric, saved predictor, or reserved-test outcome was produced. J023's reduced-model MAEs remain historical development evidence, not new measurements from this step. Next work is support/error criteria and frozen model choice, followed by the saved-predictor path using this contract.
 
+### J025: freezing demo criteria, saving the candidate, and recording a failed final gate
+
+Date: 21 October 2026. Stage: M3-to-M4 qualification and saved predictor. Status: implementation complete; frozen final demo qualification failed.
+
+The user requested implementation of support/error qualification and the saved-predictor path. Added a development-only qualification command, conservative coverage policy, frozen error criteria, native CatBoost bundle/training, shared nine-input inference, fresh-process documented-case checks, one-time reserved-test evaluation, and a public release gate. The policy uses implementation defaults informed by development evidence; these are pilot acceptance choices, not user-provided commercial tolerances or market reliability guarantees. No new collection, model tuning, extra removals, or production infrastructure was introduced.
+
+Frozen choices: CatBoost retains 300 iterations, depth 4, learning rate 0.05, RMSE, seed 42, one CPU thread, and contract `cars_reduced_v1`. Coverage requires 30 family groups, five eligible variant groups spanning all three folds, five family/year groups, and three family/city groups. Only observed eligible variant years/cities, mileage bounds, and transmission/displacement/assembly combinations are accepted. Each family needs 15 supported development groups; final scoring needs 15 supported test rows overall and three per family. Error caps are overall MAE PKR 350,000, City 300,000, Civic 450,000, Alto 200,000, Corolla 400,000, median percentage error at most 10% overall/per family, positive predictions, overall baseline improvement at least 10%, and no family baseline regression. All choices were frozen before test outcomes.
+
+Development result: 18 variants across all four families cover 243/449 development rows. Supported-subset held-out MAE is PKR 227,438, median percentage error 4.73%, and baseline improvement 24.8%. Family counts are City 25, Civic 68, Alto 95, Corolla 55. The development gate passes. Scope was selected using all development attributes/groups, so these are post-selection development metrics rather than nested validation. No test record shaped support selection.
+
+Saved predictor: trained the reduced CatBoost once on all 449 development rows. Saved native `model.cbm`, frozen input contract/catalogue/scope/support, policy/parameters, dependency versions, development metrics, model/input/code hashes, and four documented examples in `models/pilot/cars_demo_v1/`. A fresh Python process reproduced all four examples before opening the test. Fuel/body type and registration remain excluded; city retained. Unsupported identity/year/city/mileage/configurations are refused.
+
+Final measured results: evaluated the frozen model once on the unchanged 114 test records, with no overlap in development groups/IDs. Full-test MAE is PKR 257,246 versus baseline 433,877, median absolute error 197,750, median percentage error 5.39%. The predeclared support accepts only 36/114 test rows; those have MAE 286,633 versus baseline 291,764, median absolute error 194,867, median percentage error 7.78%. Supported family counts are City 3, Civic 13, Alto 15, Corolla 5. These small groups limit reliability claims.
+
+Four frozen checks fail: supported overall baseline improvement is only 1.76% versus 10% required; Civic MAE PKR 474,434 exceeds its 450,000 cap; Alto median percentage error 11.21% exceeds 10%; Alto MAE PKR 159,980 is 2.07% worse than baseline 156,733. The full-114 improvement of about 40.7% cannot replace the frozen support-subset gate after seeing outcomes. No thresholds, support boundaries, family choices, or model parameters were changed. Forest was not tested as a post-result alternative. Candidate remains research-only; public prediction serving is blocked and no interactive demo is released.
+
+Test status and verification: a durable separate usage registry records the split/model/result hashes and opening time before scoring, including failure recovery. The test is no longer unopened. Old split artifacts remain immutable historical snapshots. Reselection or repeat scoring through these commands is refused once usage is recorded. Further tuning from these findings requires a new independent holdout. All 93 tests pass with HTTP blocked, including eleven new support/gate/save-load/tampering/one-time-test/release tests. Independently recomputed stored test metrics and the comparable baseline from development data, verified freeze/train/test chronology, artifact hashes and group isolation, and checked actual CLI example success and failed-release exit. Historical artifacts remain unchanged.
+
+Artifacts: `configs/demo_qualification_v1.json`; private `reports/pilot/demo_qualification_v1/`, `models/pilot/cars_demo_v1/`, `reports/pilot/demo_test_v1/`; usage record `data/manifests/test_usage/pilot_eval_f87fae24bb5634f0.json`; [qualification, limits, commands and results](docs/demo-qualification.md). Next work is independent coverage/holdout preparation for weak regions, then a newly frozen candidate evaluation before any interactive demo qualification. User-operated collection remains mandatory.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -514,7 +534,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D027 | Preserve the larger evaluation's holdout and surviving folds during the reviewed rebuild | Review outcomes must not move used development records into an untouched test | Implemented in J020; reinstated case 11 enters development only; 114 test records unchanged |
 | D028 | Use predeclared 1% overall, 3% per-fold, and 5% per-family MAE limits for individual removals on both trees | User accepts a small tradeoff for fewer inputs; subgroup regressions must remain bounded | J022 complete: city does not qualify; fuel/body type qualify individually; joint confirmation follows in D029 |
 | D029 | Confirm fuel/body-type removal together under unchanged safeguards | Individual removals do not establish joint behavior; explicit user request | J023 passes on both models; user adopts the input contract in D030/J024; support criteria still pending |
-| D030 | Adopt nine predictor inputs, excluding fuel/body type and registration | Explicit user instruction after successful combined confirmation | J024 implements `cars_reduced_v1` shared normalization/frames/factories; support/error criteria and saved predictor still pending |
+| D030 | Adopt nine predictor inputs, excluding fuel/body type and registration | Explicit user instruction after successful combined confirmation | J024 adopts `cars_reduced_v1`; J025 freezes support/limits and saves a research candidate that fails the final gate |
+| D031 | Freeze support, model, and pilot error limits before test; block serving if final qualification fails | Prevent post-test scope/threshold changes or accidental use of a failed candidate | J025 implements and records failed final gate; saved research candidate retained; existing test opened and future independent holdout required |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -597,6 +618,7 @@ When experiments run, record:
 | m3_modeling_002_ablation_v1 / random_forest_without_mileage_km | Same reviewed dataset/split | F2 minus mileage | Same fixed forest configuration | 273,885 | Not run | Best forest single removal; qualifies for this model only |
 | m3_modeling_002_combined_ablation_v1 / catboost_without_fuel_and_body_type | modeling_combined_002_v2 / pilot_eval_f87fae24bb5634f0 | F2 minus fuel/body type | Same fixed CatBoost configuration | 252,692 | Not run | Passes overall/fold/family limits; reduced candidate recommended |
 | m3_modeling_002_combined_ablation_v1 / random_forest_without_fuel_and_body_type | Same reviewed dataset/split | F2 minus fuel/body type | Same fixed forest configuration | 278,531 | Not run | Passes limits; lower Civic MAE than reduced CatBoost |
+| cars_demo_candidate_v1 / frozen CatBoost | modeling_combined_002_v2 / pilot_eval_f87fae24bb5634f0 | Adopted nine inputs | Same fixed CatBoost; trained on all 449 development rows | 252,692 full development; 227,438 scoped | 257,246 on all 114; 286,633 on 36 scoped | Final scope gate fails four checks; serving blocked; test now opened |
 
 Include fold variability, median error, subgroup counts/errors, training time, and artifact references in the associated story entry. Label exploratory, selected, rejected, and superseded experiments explicitly. A final-test metric is `Not run` until the frozen candidate is evaluated.
 
@@ -617,14 +639,15 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J022 completes 60 feature-removal fits and 8,980 predictions with exact full-reference reproduction. City lowers pooled MAE but fails fold/family safeguards; fuel/body type qualify individually on both models. Seventy-four tests and independent metric/isolation/decision checks pass. No reduced schema or reserved-test outcome is produced.
 - J023 confirms joint fuel/body-type removal in 12 fits and 1,796 development predictions. CatBoost MAE is PKR 252,692 and forest 278,531; both pass unchanged safeguards. Seventy-six tests and independent checks pass. Reduced candidate contract/support and saved predictor remain pending; test outcomes stay closed.
 - J024 adopts the nine-input contract for the next predictor, excluding fuel/body type and registration while retaining city. Eighty-two tests pass; all 449 real development inputs match the confirmed experiment. No new real-data fit, metric, saved predictor, or test outcome was produced.
-- A local prediction demo, saved qualified predictor, final-test result, and deployed application are pending.
+- J025 freezes 18-variant support and error criteria, trains/saves CatBoost, verifies four examples in a fresh process, and evaluates 114 test rows once. Full MAE is PKR 257,246; the 36 scoped test rows fail four final checks. Ninety-three tests pass; prediction serving is blocked and the test is now opened evidence.
+- An interactive qualified demo, saved qualified predictor, and deployed application remain pending. A saved research candidate and its final-test result are available.
 
 ## 8. Reusable story-entry template
 
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J025: <specific event or milestone>
+### J026: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 

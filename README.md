@@ -19,6 +19,7 @@ The current stage is the data and modeling pilot. Reuse the working car collecto
 - [Independent feature-removal experiment](docs/feature-removal-experiment.md)
 - [Combined fuel/body-type confirmation](docs/combined-feature-removal.md)
 - [Adopted nine-input predictor contract](docs/predictor-input-contract.md)
+- [Frozen qualification, saved candidate, and final-test results](docs/demo-qualification.md)
 
 ## Current structure
 
@@ -122,7 +123,7 @@ The user has confirmed the ten original records are accurate. The extended schem
 
 ## Current prepared dataset
 
-The current reviewed version is `modeling_combined_002_v2`: 626 candidates and 563 eligible modeling rows, including one explicit user-accepted price exception. It applies all twelve review decisions, excludes the six rejected IDs, and corrects case 8 to 100,000 km. Evaluation version `modeling_combined_002_eval_v2` contains 449 development rows and the unchanged 114 reserved test rows. Registration stays outside model inputs. The [reviewed model comparison](docs/reviewed-model-comparison.md) is complete: CatBoost F2 development MAE is PKR 266,885, Random Forest F2 is 280,359, and the median baseline is 434,057. Both tree candidates remain provisional; no saved predictor or final-test score exists. The [feature-removal experiment](docs/feature-removal-experiment.md) supports keeping city provisionally and identified fuel/body type as individual removal candidates. The [combined confirmation](docs/combined-feature-removal.md) now passes both models: reduced CatBoost MAE PKR 252,692 and forest 278,531. The [nine-input contract](docs/predictor-input-contract.md) is now adopted for the next predictor, excluding fuel/body type and registration while retaining city. Supported scope/error criteria and the saved predictor remain next. See [the rebuild record](docs/reviewed-dataset-rebuild.md).
+The current reviewed version is `modeling_combined_002_v2`: 626 candidates and 563 eligible rows, split into 449 development and 114 test records. All review decisions and the 100,000 km correction are applied. The adopted predictor uses nine inputs, excluding fuel/body type and registration while retaining city. A frozen CatBoost research candidate is saved in `models/pilot/cars_demo_v1/`. Its one-time final-test MAE is PKR 257,246 on all 114 records. Only 36 meet the frozen support bounds; their MAE is 286,633 and four demo criteria fail. Prediction serving is blocked. The test is now opened evidence; further selection needs a new independent holdout. See [qualification and results](docs/demo-qualification.md).
 
 The historical 20 October larger dataset is `modeling_combined_002_v1`: 808 observations from two batches consolidate to 804 unique listing IDs, 630 candidates, and 567 candidates with cached price agreement. Its fixed evaluation has 453 development rows and 114 reserved test rows; all 72 earlier evaluation partitions/folds are preserved. Random Forest F2 has exploratory development MAE PKR 311,639, versus PKR 458,508 for the median baseline. CatBoost F2 is close at PKR 314,476. Unusually low source asking prices and one source identity ambiguity still need review before demo qualification. See [the larger-batch review](docs/modeling-batch-002-review.md) for evidence, outputs, and reproduction. The original pilot below is preserved as historical evidence.
 
@@ -156,9 +157,9 @@ To reproduce offline into a new directory:
 
 The initial M3 comparison is complete: 12 algorithm/feature combinations, 36 training-fold fits, and 57 held-out development predictions per combination. F2, which adds fuel, transmission, displacement, assembly, and body type to family/year/mileage/city/variant, improved all three ML candidates over F1.
 
-Development MAE was PKR 785,518 for the median baseline, 507,766 for Ridge F2, 495,765 for Random Forest F2, and 492,904 for CatBoost F2. CatBoost's small overall lead does not establish a winner: its Alto MAE was worse than the baseline, and rare variants/year ranges caused large coverage gaps. No demo candidate or support policy is finalized. The reserved test remains unopened for model outcomes.
+Development MAE was PKR 785,518 for the median baseline, 507,766 for Ridge F2, 495,765 for Random Forest F2, and 492,904 for CatBoost F2. CatBoost's small overall lead does not establish a winner: its Alto MAE was worse than the baseline, and rare variants/year ranges caused large coverage gaps. No demo candidate or support policy is finalized. That initial comparison did not open the test. J025 subsequently evaluates the preserved larger test once; see the current qualification report.
 
-See [the first comparison and error review](docs/pilot-model-comparison.md) and [full private report](reports/pilot/m3_batch_001_v1/model_selection.md). The subsequent deeper collection, consolidated dataset, and reevaluation are now complete in [the follow-up review](docs/modeling-batch-002-review.md). The [reviewed rerun](docs/reviewed-model-comparison.md) is now complete. The [independent feature removals](docs/feature-removal-experiment.md) are also complete: city improves pooled error when omitted but fails the agreed subgroup safeguards; fuel and body type qualify individually for both trees. The [combined-removal confirmation](docs/combined-feature-removal.md) now passes both trees. The [reduced input contract](docs/predictor-input-contract.md) is adopted. Next proposed work is supported scope/error criteria, frozen model choice, and the saved-predictor path. All test predictions remain unopened.
+See [the first comparison and error review](docs/pilot-model-comparison.md) and [full private report](reports/pilot/m3_batch_001_v1/model_selection.md). The subsequent deeper collection, consolidated dataset, and reevaluation are now complete in [the follow-up review](docs/modeling-batch-002-review.md). The [reviewed rerun](docs/reviewed-model-comparison.md) is now complete. The [independent feature removals](docs/feature-removal-experiment.md) are also complete: city improves pooled error when omitted but fails the agreed subgroup safeguards; fuel and body type qualify individually for both trees. The [combined-removal confirmation](docs/combined-feature-removal.md) now passes both trees. The [reduced input contract](docs/predictor-input-contract.md) is adopted. The [frozen saved candidate](docs/demo-qualification.md) has now been evaluated once and failed the final demo gate. Test outcomes are opened evidence; further tuning requires a new independent holdout.
 
 Modeling uses additional dependencies in the existing environment. Reproduce offline into a new report directory:
 
@@ -174,7 +175,7 @@ Modeling uses additional dependencies in the existing environment. Reproduce off
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Eighty-two behavioral tests pass with HTTP requests blocked, including the adopted nine-input contract, feature removals, manual reviews, corrected mileage, development-only comparison, and evaluation-history preservation. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
+The preserved original scraper is under `data/raw/baseline_2026-10-01/`. The current collector keeps core parsing, pacing, and access-stop behavior, and adds optional attributes with explicit provenance. Ninety-three behavioral tests pass with HTTP requests blocked, including frozen support/error criteria, native save/load, one-time test usage, failed-release blocking, adopted inputs, and historical evaluation preservation. Both existing parser self-tests passed during the previous quality-review step. No live collector was launched.
 
 Reproduce new-field extraction from cached pages without network access:
 
@@ -215,3 +216,13 @@ Default collector output paths, used when `--output-dir` is omitted:
 - `data/raw/current/manifest.json`, `runs/`, and `collection_summary.md`: collection accounting.
 
 The clean export is parser complete, not a reviewed training dataset. Preserve each batch before another run. Asking prices are not verified sale prices, and diagnostic HTML may include seller information. Keep the prototype and evidence private until the requested review.
+
+## Saved candidate checks
+
+The research model is saved; it failed final demo qualification, so general prediction serving and an interactive release are blocked. This check loads it in a fresh process and verifies four documented cases:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.predict --check-examples
+```
+
+See [the full report](docs/demo-qualification.md) for support bounds, frozen limits, failed checks, and next work. Do not rerun test selection or relax limits against the opened results.
