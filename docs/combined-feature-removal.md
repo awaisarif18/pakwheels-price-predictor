@@ -47,3 +47,5 @@ Reproduce offline into a new output directory:
 ```
 
 The completed run blocked HTTP around this runner. Existing outputs cannot be overwritten. No inference predictor was saved and no reserved-test outcome was computed. Next finalize supported scope/error criteria and the reduced candidate contract before saving and evaluating a frozen demo predictor.
+
+J024 update, 21 October 2026: the user has [adopted the nine-input contract](predictor-input-contract.md) for the next predictor. Fuel/body type are excluded from preparation and both candidate factories; city is retained and registration excluded. All 82 tests pass and all 449 real development inputs match the combined experiment. Supported scope/error criteria and the saved predictor remain pending. Historical evaluation contracts remain unchanged.

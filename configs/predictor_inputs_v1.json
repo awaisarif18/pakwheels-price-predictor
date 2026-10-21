@@ -1,0 +1,20 @@
+{
+  "contract_schema_version": 1,
+  "contract_id": "cars_reduced_v1",
+  "base_feature_set": "F2",
+  "columns": ["make", "model", "year", "mileage_km", "listing_city", "variant", "transmission", "engine_cc", "assembly"],
+  "numerical": ["year", "mileage_km", "engine_cc"],
+  "categorical": ["make", "model", "listing_city", "variant", "transmission", "assembly"],
+  "excluded_inputs": ["fuel", "body_type", "registration_year", "registration_gap"],
+  "missing_category": "__MISSING__",
+  "missing_numerical": null,
+  "target": "price_pkr",
+  "target_unit": "PKR",
+  "model_year_policy": "direct; no derived age",
+  "prediction_support": "not_declared",
+  "selection_evidence": {
+    "experiment_id": "m3_modeling_002_combined_ablation_v1",
+    "dataset_id": "modeling_combined_002_v2",
+    "split_id": "pilot_eval_f87fae24bb5634f0"
+  }
+}

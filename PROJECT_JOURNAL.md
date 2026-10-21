@@ -25,7 +25,7 @@ Update this file as part of future project work; its creation does not establish
 | Area | Status as of 21 October 2026 | Evidence or limitation |
 |---|---|---|
 | Goal | Estimate advertised asking prices in Pakistan, in PKR | Separate car and motorcycle predictors are intended |
-| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Seventy-six offline tests pass with HTTP blocked; no live collector launched during J017-J023 |
+| Car collector | Sampling, persistence, main-price selection, and PHEV parsing implemented | Eighty-two offline tests pass with HTTP blocked; no live collector launched during J017-J024 |
 | Initial car sample | Ten stored records, preserved with checksums | Baseline and active copies exist under `data/raw/` |
 | Field collection pilot | 200 stored IDs; 199 parser-complete rows; 180 complete quota matches | Offline review produces 137 candidates and 72 with cached price agreement; J013 |
 | Deeper modeling collection | User saved 608 unique IDs, 606 complete rows, and 571/600 assigned matches | Nine quotas met; two configured searches exhausted; stop unchanged plan |
@@ -33,15 +33,15 @@ Update this file as part of future project work; its creation does not establish
 | Make/model/variant normalization | Derived combined catalogue preserves 94 observed labels | 37 evidence-backed additions; user keeps the advertised Corolla identity despite the preserved Corolla/Cross ambiguity |
 | Dataset preparation | Reviewed v2 exports 808 observations, 804 unique IDs, 626 candidates, and 563 eligible rows | J020 applies all review decisions: 562 exact-price agreements plus one explicit user acceptance; case 8 corrected to 100,000 km |
 | Motorcycle collector | Planned | Live motorcycle detail parsing has not been verified here |
-| Feature selection | Individual removals and joint fuel/body-type confirmation complete | Pair passes all safeguards for both trees; recommend omitting both from next candidate; keep city; registration excluded |
+| Feature selection | Adopted nine-input contract `cars_reduced_v1` for the next predictor | Fuel/body type removed from next-predictor preparation and model factories; city retained; registration excluded; historical F0-F2 preserved |
 | Evaluation membership | Reviewed v2 has 449 development records in folds of 150, 150, and 149; 114 reserved test records | Split ID `pilot_eval_f87fae24bb5634f0`; surviving parent folds and all 114 test records preserved |
-| Algorithm selection | Reduced CatBoost remains provisional overall leader | Joint-removal MAE PKR 252,692 versus forest 278,531; forest has lower Civic MAE; inference/support contract pending |
+| Algorithm selection | Reduced CatBoost remains provisional overall leader | Joint-removal MAE PKR 252,692 versus forest 278,531; input contract adopted in J024; support/error criteria pending |
 | Model training and evaluation | J023 adds four configurations, 12 fits, and 1,796 development predictions | Pair improves MAE 5.32% for CatBoost and 0.65% for forest; no final-test result or saved predictor |
 | Local demo | Planned | Follows the data/modeling pilot |
 | Production framework and infrastructure | Deferred | FastAPI and managed infrastructure remain future recommendations |
 | Publication | Private review required before public release | Authorization and review conditions are reported in the handbook |
 
-Next proposed work: freeze the reduced candidate's inference contract and supported scope/error criteria, then save and evaluate a frozen demo predictor. J023 supports removing fuel/body type together from the next candidate; current F0-F2 artifacts remain preserved. Retain city under the agreed safeguards. Keep all 114 reserved test outcomes closed during selection. Registration year stays separate from all inputs. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
+Next proposed work: declare supported scope/error criteria and freeze the model choice, then save and evaluate a frozen demo predictor using the adopted nine-input contract. J024 implements the user's fuel/body-type removal decision; city remains included, registration excluded, and historical F0-F2 artifacts preserved. Keep all 114 reserved test outcomes closed during selection. Live collection remains user-operated under [AGENTS.md](AGENTS.md).
 
 ## 3. The project story so far
 
@@ -438,6 +438,18 @@ Verification: all 76 tests pass with HTTP blocked, including two new combined-co
 
 Artifacts: `configs/ablations_modeling_002_combined.json`, private `reports/pilot/m3_modeling_002_combined_ablation_v1/`, updated current private selection summary, and [tracked methods/results/reproduction](docs/combined-feature-removal.md). Results remain exploratory development selection evidence. No final-test outcome exists. Next work is the reduced candidate contract, support/error criteria, and saved-predictor path.
 
+### J024: adopting the next predictor's nine inputs
+
+Date: 21 October 2026. Stage: M3-to-demo input contract. Status: input removal adopted and verified; supported scope/error criteria and saved predictor pending.
+
+The user explicitly requested removing fuel and body type from the next predictor after J023's joint check passed. Added versioned `configs/predictor_inputs_v1.json`, contract ID `cars_reduced_v1`, selecting make, model, advertised model year, mileage, listing city, variant, transmission, displacement, and assembly in the successful experiment's order. Registration remains excluded. Historical F0-F2 contracts, data, catalogues, and experiment artifacts remain unchanged; collected fuel/body-type values are retained as evidence.
+
+Implementation: `pilot/predictor_inputs.py` supplies the default adopted contract, source/form normalization that reads only selected keys, a verified development-data adapter, a prepared-input frame builder, and model factories for both shortlisted trees with nine columns. Existing normalization and eligibility checks remain shared with F2, with price and metadata excluded. A loaded or supplied contract cannot silently reintroduce fields, reorder inputs, alter missing conventions, or change the target. The development adapter has no test-partition option. Algorithm choice and supported scope are separate from the input contract.
+
+Measured verification: all 82 tests pass with HTTP blocked, including six new tests for excluded-key reads, form/training parity, retained-value/missingness rules, contract drift, actual nine-column model fits/predictions, and unchanged development membership. On the real reviewed population, every one of 449 development records matches the nine normalized inputs and frame used by the combined-removal experiment. All six reduced-model fold details declare exactly the adopted order. IDs, targets, groups, and 150/150/149 folds remain unchanged; corrected case 8 is still 100,000 km and accepted case 11 remains included. Both factories select only the adopted fields. All 114 reserved test IDs remain outside development. Historical output hashes match.
+
+Artifacts: adopted configuration/module/tests, [input contract and usage](docs/predictor-input-contract.md), and private `reports/pilot/predictor_inputs_v1/` containing a frozen contract copy and verification record with input/code fingerprints. No live collection, new real-data model fit, new metric, saved predictor, or reserved-test outcome was produced. J023's reduced-model MAEs remain historical development evidence, not new measurements from this step. Next work is support/error criteria and frozen model choice, followed by the saved-predictor path using this contract.
+
 ## 4. Hurdles and resolutions
 
 Use an ID to connect each hurdle to its investigation, fix, and later verification entry. A known limitation is not necessarily a failure already encountered in a real run.
@@ -501,7 +513,8 @@ When a hurdle is solved, record the actual code/data change, date, verification,
 | D026 | Keep registration year as metadata only, separate from all model inputs | Explicit user instruction in J018; model year and registration are different facts | Accepted; registration/registration-gap features excluded rather than awaiting an F3 experiment |
 | D027 | Preserve the larger evaluation's holdout and surviving folds during the reviewed rebuild | Review outcomes must not move used development records into an untouched test | Implemented in J020; reinstated case 11 enters development only; 114 test records unchanged |
 | D028 | Use predeclared 1% overall, 3% per-fold, and 5% per-family MAE limits for individual removals on both trees | User accepts a small tradeoff for fewer inputs; subgroup regressions must remain bounded | J022 complete: city does not qualify; fuel/body type qualify individually; joint confirmation follows in D029 |
-| D029 | Confirm fuel/body-type removal together under unchanged safeguards | Individual removals do not establish joint behavior; explicit user request | J023 passes on both models; recommend nine-input reduced candidate; inference contract/support still pending |
+| D029 | Confirm fuel/body-type removal together under unchanged safeguards | Individual removals do not establish joint behavior; explicit user request | J023 passes on both models; user adopts the input contract in D030/J024; support criteria still pending |
+| D030 | Adopt nine predictor inputs, excluding fuel/body type and registration | Explicit user instruction after successful combined confirmation | J024 implements `cars_reduced_v1` shared normalization/frames/factories; support/error criteria and saved predictor still pending |
 
 Add new decisions rather than silently replacing old ones. If a decision changes, mark it superseded and link its replacement entry.
 
@@ -603,6 +616,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 - J021 completes the reviewed 12-combination comparison with 36 fits. CatBoost F2 leads with MAE PKR 266,885 versus Forest 280,359 and baseline 434,057. Six focused tests and independent prediction/metric/isolation checks pass; all reserved-test outcomes remain unopened.
 - J022 completes 60 feature-removal fits and 8,980 predictions with exact full-reference reproduction. City lowers pooled MAE but fails fold/family safeguards; fuel/body type qualify individually on both models. Seventy-four tests and independent metric/isolation/decision checks pass. No reduced schema or reserved-test outcome is produced.
 - J023 confirms joint fuel/body-type removal in 12 fits and 1,796 development predictions. CatBoost MAE is PKR 252,692 and forest 278,531; both pass unchanged safeguards. Seventy-six tests and independent checks pass. Reduced candidate contract/support and saved predictor remain pending; test outcomes stay closed.
+- J024 adopts the nine-input contract for the next predictor, excluding fuel/body type and registration while retaining city. Eighty-two tests pass; all 449 real development inputs match the confirmed experiment. No new real-data fit, metric, saved predictor, or test outcome was produced.
 - A local prediction demo, saved qualified predictor, final-test result, and deployed application are pending.
 
 ## 8. Reusable story-entry template
@@ -610,7 +624,7 @@ Include fold variability, median error, subgroup counts/errors, training time, a
 Append completed entries to Section 3 in chronological order. Use only the fields relevant to the work; collection or training details can live in linked reports.
 
 ```markdown
-### J024: <specific event or milestone>
+### J025: <specific event or milestone>
 
 Date: YYYY-MM-DD. Stage: <pilot milestone>. Status: <investigating/completed/blocked>.
 
